@@ -5,7 +5,13 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        remington: ["Remington", "sans-serif"],
+        impress: ["Impress", "sans-serif"],
+        minnie: ["Minnie", "sans-serif"],
+      },
+    },
   },
   plugins: [],
 }

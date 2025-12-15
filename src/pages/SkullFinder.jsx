@@ -142,7 +142,7 @@ export default function SkullFinder() {
 
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col items-center py-8">
-      <h1 className="text-3xl font-bold mb-4 text-white">Minesweeper</h1>
+      <h1 className="text-3xl font-bold mb-4 text-white">Skull Finder</h1>
 
       {gameOver && (
         <div className="mb-4 text-xl">
@@ -207,7 +207,7 @@ export default function SkullFinder() {
             >
               {cell.revealed && (
                 <>
-                  {cell.bomb && "💣"}
+                  {cell.bomb && "☠️"}
                   {!cell.bomb && cell.number > 0 && cell.number}
                 </>
               )}
