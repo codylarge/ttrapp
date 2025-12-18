@@ -61,7 +61,7 @@ export default function GagCalculator() {
       { name: "squirt-gun", track: "squirt", damage: 12, accuracy: 95, affectAll: false },
       { name: "seltzer-bottle", track: "squirt", damage: 21, accuracy: 95, affectAll: false },
       { name: "fire-hose", track: "squirt", damage: 30, accuracy: 95, affectAll: false },
-      { name: "storm-cloud", track: "squirt", damage: 70, accuracy: 90, affectAll: false },
+      { name: "storm-cloud", track: "squirt", damage: 80, accuracy: 90, affectAll: false },
       { name: "geyser", track: "squirt", damage: 105, accuracy: 90, affectAll: true }
     ],
   
@@ -77,11 +77,29 @@ export default function GagCalculator() {
   };
   
   function addGag(gag, org=false) {
+    if (selected.length >= 6) return; 
+    
     if (org) {
       if (gag.track === "lure") {
         gag.accuracy += 10;
       } else {
         gag.damage = Math.ceil((gag.damage * 11) / 10);
+      }
+    }
+
+    if(gag.track === "trap") {
+      const alreadySelected = selected.some(selectedGag => selectedGag.track === "trap");
+      if (alreadySelected) {
+        // Replace the existing trap gag
+        setSelected(prev => prev.map(selectedGag => 
+          selectedGag.track === "trap" ? {
+            track: gag.track,
+            name: gag.name,
+            damage: gag.damage,
+            accuracy: gag.accuracy
+          } : selectedGag
+        ));
+        return;
       }
     }
 
@@ -95,30 +113,66 @@ export default function GagCalculator() {
 
   function calculateDamage() {
     let totalDamage = 0;
+    totalDamage += calculateTrapDamage();
+    const organizedGags = getOrganizedGags();
 
-    for (let i = 0; i < selected.length; i++) {
-      totalDamage += selected[i].damage;
-    }
-  
-    if (selected.length > 1) {
-      const bonus = Math.ceil(totalDamage * 0.20);
-      totalDamage += bonus;
+    for (const track in organizedGags) {
+      let trackDamage = 0;
+      const trackGags = organizedGags[track];
+      
+      for (let i = 0; i < trackGags.length; i++) {
+        trackDamage += trackGags[i].damage;
+      }
+
+      if (trackGags.length > 1) {
+        const boostedDamage = Math.ceil(trackDamage * 1.2);
+        totalDamage += boostedDamage;
+      }
+      else {
+        totalDamage += trackGags[0].damage;
+      }
     }
 
     return totalDamage;
   }
 
+  function calculateTrapDamage() {
+    const isTrapGag = selected.find(gag => gag.track === "trap"); // Return trap gag
+    const isLureGag = selected.some(gag => gag.track === "lure"); // Return lure gag
+
+    if (isTrapGag && isLureGag) {
+      return isTrapGag.damage;
+    }
+    return 0;
+  }
+
+  function getOrganizedGags() {
+    const groupedGags = {};
+
+    for (let i = 0; i < selected.length; i++) {
+      const gag = selected[i];
+
+      if (gag.track === "trap") continue;
+
+      // If this track does not exist yet, create an empty array
+      if (!groupedGags[gag.track]) {
+        groupedGags[gag.track] = [];
+      }
+      groupedGags[gag.track].push(gag);
+    }
+    return groupedGags;
+  }
+
+
   function convertGagName(name) {
     return name
-      .replace(/-/g, ' ')                       // Replace hyphens with spaces
+      .replace(/-/g, ' ') // Replace hyphens with spaces
       .replace(/\b\w/g, c => c.toUpperCase()); // Capitalize first letter of each word
   }
 
   function clear() {
     setSelected([]);
   }
-
-
 
   return (
     <div className="w-[90%] max-w-6xl min-w-[850px] bg-red-600 p-6 rounded-3xl shadow-2xl border-4 border-red-700">
@@ -172,8 +226,7 @@ export default function GagCalculator() {
           {/* Total damage */}
           <div className="text-5xl font-impress text-neutral-900/50 whitespace-nowrap">
             = {calculateDamage()}
-          </div>
-          
+          </div> 
         </div>
       )}
       </div>  
@@ -199,72 +252,70 @@ export default function GagCalculator() {
                 >
                   {track.name.toUpperCase()}
                 </div>  
-                  {/* GAG BUTTONS */}
-                  {gags[track.name].map((gag, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => addGag(gag)}
-                    onMouseEnter={() =>
-                      setHoveredGag({
-                        track: gag.track,
-                        name: gag.name,
-                        damage: gag.damage,
-                        accuracy: gag.accuracy,
-                        gagObj: gag   
-                      })
-                    }
-                    onMouseLeave={() => setHoveredGag(null)}
-                    className="relative px-5 py-1.5 rounded-2xl hover:brightness-110 transition"
-                    style={{
-                      backgroundColor: "#00a2ffff",
-                      boxShadow: `
-                        inset 0 4px 6px rgba(0, 0, 0, 0.25),
-                        2px 2px 0px #1d3b7d
-                      `,
-                    }}
-                  >   
-                    {/* Organic overlay */}
-                    {hoveredGag?.name === gag.name &&
-                     hoveredGag?.track === track.name && (
-                       <button
-                         onClick={(e) => {
-                           e.stopPropagation();         // prevents normal gag click
-                           addGag(gag, true);
-                         }}
-                         onMouseEnter={() => setOrganicHovered(true)}
-                         onMouseLeave={() => setOrganicHovered(false)}
-                         className="
-                          absolute
-                          -top-3
-                          -right-3
-                          w-8 h-8
-                          rounded-full
-                          transition
-                          shadow-lg
-                          flex items-center justify-center
-                           "
-                       >
-                         <img
-                           src={
-                             organicHovered
-                               ? "/images/ui/organic-active.webp"
-                               : "/images/ui/organic-inactive.webp"
-                           }
-                           className="w-8 h-8"
-                         />
-                       </button>
+              {/* GAG BUTTONS */}
+              {gags[track.name].map((gag, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => addGag(gag)}
+                  onMouseEnter={() =>
+                    setHoveredGag({
+                      track: gag.track,
+                      name: gag.name,
+                      damage: gag.damage,
+                      accuracy: gag.accuracy,
+                      gagObj: gag,
+                    })
+                  }
+                  onMouseLeave={() => {
+                    setHoveredGag(null);
+                    setOrganicHovered(false);
+                  }}
+                  className="relative px-5 py-1.5 rounded-2xl hover:brightness-110 transition"
+                  style={{
+                    backgroundColor: "#00a2ffff",
+                    boxShadow: `
+                      inset 0 4px 6px rgba(0, 0, 0, 0.25),
+                      2px 2px 0px #1d3b7d
+                    `,
+                  }}
+                >
+                  {/* ORGANIC OVERLAY (NOT A BUTTON) */}
+                  {hoveredGag?.name === gag.name &&
+                    hoveredGag?.track === gag.track && (
+                      <div
+                        role="button"
+                        onClick={(e) => {
+                          e.stopPropagation(); // prevent normal gag click
+                          addGag(gag, true);
+                        }}
+                        onMouseEnter={() => setOrganicHovered(true)}
+                        onMouseLeave={() => setOrganicHovered(false)}
+                        className="absolute -top-3 -right-3 w-8 h-8 rounded-full shadow-lg cursor-pointer flex items-center justify-center transition"
+                      >
+                        <img
+                          src={
+                            organicHovered
+                              ? "/images/ui/organic-active.webp"
+                              : "/images/ui/organic-inactive.webp"
+                          }
+                          className="w-8 h-8 pointer-events-none"
+                        />
+                      </div>
                     )}
-                    <img
-                      src={`/images/gags/${track.name}/${gag.name}.webp`}
-                      alt={gag.name}
-                      className="w-11 h-11 object-contain min-w-[24px] min-h-[24px]"
-                    />
-                  </button>
+              
+                  {/* GAG IMAGE */}
+                  <img
+                    src={`/images/gags/${track.name}/${gag.name}.webp`}
+                    alt={gag.name}
+                    className="w-11 h-11 object-contain min-w-[24px] min-h-[24px]"
+                  />
+                </button>
               ))}
               </div>
             </div>
           ))}
-        </div>  
+        </div>
+
         {/* RIGHT PANEL */}  
         <div className="w-80 bg-gray-100 rounded-xl p-4 flex flex-col justify-between inner-shadow">  
         {/* HOVER PREVIEW ONLY */}
