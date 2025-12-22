@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function GagCalculator() {
+export default function GagCalculator({ selected, setSelected }) {
   const gagTracks = [
     { name: "trap", color: "#fffc57ff" },
     { name: "lure", color: "#10b901ff" },
@@ -10,29 +10,28 @@ export default function GagCalculator() {
     { name: "drop", color: "#3ef5ffff" },
   ];
   
-  const [selected, setSelected] = useState([]);
   const [hoveredGag, setHoveredGag] = useState(null);
   const [organicHovered, setOrganicHovered] = useState(false);
 
   const gags = {
     trap: [
-      { name: "banana-peel", track: "trap", damage: 12, accuracy: 100, affectAll: false },
-      { name: "rake", track: "trap", damage: 18, accuracy: 100, affectAll: false },
-      { name: "marbles", track: "trap", damage: 35, accuracy: 100, affectAll: false },
-      { name: "quicksand", track: "trap", damage: 50, accuracy: 100, affectAll: false },
-      { name: "trapdoor", track: "trap", damage: 85, accuracy: 100, affectAll: false },
-      { name: "tnt", track: "trap", damage: 180, accuracy: 100, affectAll: false },
-      { name: "railroad", track: "trap", damage: 200, accuracy: 100, affectAll: true }
+      { name: "banana-peel", track: "trap", damage: 12, accuracy: 0, affectAll: false },
+      { name: "rake", track: "trap", damage: 18, accuracy: 0, affectAll: false },
+      { name: "marbles", track: "trap", damage: 35, accuracy: 0, affectAll: false },
+      { name: "quicksand", track: "trap", damage: 50, accuracy: 0, affectAll: false },
+      { name: "trapdoor", track: "trap", damage: 85, accuracy: 0, affectAll: false },
+      { name: "tnt", track: "trap", damage: 180, accuracy: 0, affectAll: false },
+      { name: "railroad", track: "trap", damage: 200, accuracy: 0, affectAll: true }
     ],
   
     lure: [
-      { name: "$1-bill", track: "lure", damage: 0, accuracy: 65, affectAll: false },
-      { name: "small-magnet", track: "lure", damage: 0, accuracy: 70, affectAll: true },
-      { name: "$5-bill", track: "lure", damage: 0, accuracy: 75, affectAll: false },
-      { name: "big-magnet", track: "lure", damage: 0, accuracy: 80, affectAll: true },
-      { name: "$10-bill", track: "lure", damage: 0, accuracy: 85, affectAll: false },
-      { name: "hypno-goggles", track: "lure", damage: 0, accuracy: 90, affectAll: true },
-      { name: "presentation", track: "lure", damage: 0, accuracy: 95, affectAll: true }
+      { name: "$1-bill", track: "lure", damage: 0, accuracy: 60, affectAll: false },
+      { name: "small-magnet", track: "lure", damage: 0, accuracy: 55, affectAll: true },
+      { name: "$5-bill", track: "lure", damage: 0, accuracy: 70, affectAll: false },
+      { name: "big-magnet", track: "lure", damage: 0, accuracy: 65, affectAll: true },
+      { name: "$10-bill", track: "lure", damage: 0, accuracy: 80, affectAll: false },
+      { name: "hypno-goggles", track: "lure", damage: 0, accuracy: 75, affectAll: true },
+      { name: "presentation", track: "lure", damage: 0, accuracy: 90, affectAll: true }
     ],
   
     sound: [
@@ -46,13 +45,13 @@ export default function GagCalculator() {
     ],
   
     throw: [
-      { name: "cupcake", track: "throw", damage: 6, accuracy: 80, affectAll: false },
-      { name: "fruit-pie-slice", track: "throw", damage: 10, accuracy: 80 , affectAll: false },
-      { name: "cream-pie-slice", track: "throw", damage: 17, accuracy: 80, affectAll: false },
+      { name: "cupcake", track: "throw", damage: 6, accuracy: 75, affectAll: false },
+      { name: "fruit-pie-slice", track: "throw", damage: 10, accuracy: 75 , affectAll: false },
+      { name: "cream-pie-slice", track: "throw", damage: 17, accuracy: 75, affectAll: false },
       { name: "whole-fruit-pie", track: "throw", damage: 27, accuracy: 75, affectAll: false },
       { name: "whole-cream-pie", track: "throw", damage: 40, accuracy: 75, affectAll: false },
-      { name: "birthday-cake", track: "throw", damage: 100, accuracy: 70, affectAll: false },
-      { name: "wedding-cake", track: "throw", damage: 120, accuracy: 70, affectAll: true }
+      { name: "birthday-cake", track: "throw", damage: 100, accuracy: 75, affectAll: false },
+      { name: "wedding-cake", track: "throw", damage: 120, accuracy: 75, affectAll: true }
     ],
   
     squirt: [
@@ -61,16 +60,16 @@ export default function GagCalculator() {
       { name: "squirt-gun", track: "squirt", damage: 12, accuracy: 95, affectAll: false },
       { name: "seltzer-bottle", track: "squirt", damage: 21, accuracy: 95, affectAll: false },
       { name: "fire-hose", track: "squirt", damage: 30, accuracy: 95, affectAll: false },
-      { name: "storm-cloud", track: "squirt", damage: 80, accuracy: 90, affectAll: false },
-      { name: "geyser", track: "squirt", damage: 105, accuracy: 90, affectAll: true }
+      { name: "storm-cloud", track: "squirt", damage: 80, accuracy: 95, affectAll: false },
+      { name: "geyser", track: "squirt", damage: 105, accuracy: 95, affectAll: true }
     ],
   
     drop: [
-      { name: "flower-pot", track: "drop", damage: 10, accuracy: 70, affectAll: false },
-      { name: "sandbag", track: "drop", damage: 18, accuracy: 65, affectAll: false },
-      { name: "anvil", track: "drop", damage: 30, accuracy: 60, affectAll: false },
-      { name: "big-weight", track: "drop", damage: 45, accuracy: 60, affectAll: false },
-      { name: "safe", track: "drop", damage: 70, accuracy: 55, affectAll: false },
+      { name: "flower-pot", track: "drop", damage: 10, accuracy: 50, affectAll: false },
+      { name: "sandbag", track: "drop", damage: 18, accuracy: 50, affectAll: false },
+      { name: "anvil", track: "drop", damage: 30, accuracy: 50, affectAll: false },
+      { name: "big-weight", track: "drop", damage: 45, accuracy: 50, affectAll: false },
+      { name: "safe", track: "drop", damage: 70, accuracy: 50, affectAll: false },
       { name: "grand-piano", track: "drop", damage: 170, accuracy: 50, affectAll: false },
       { name: "toontanic", track: "drop", damage: 180, accuracy: 50, affectAll: true }
     ]
@@ -83,14 +82,14 @@ export default function GagCalculator() {
       if (gag.track === "lure") {
         gag.accuracy += 10;
       } else {
-        gag.damage = Math.ceil((gag.damage * 11) / 10);
+        gag.damage = getOrgDamage(gag)
       }
     }
 
     if(gag.track === "trap") {
-      const alreadySelected = selected.some(selectedGag => selectedGag.track === "trap");
-      if (alreadySelected) {
-        // Replace the existing trap gag
+      const alreadySelectedTrap = selected.some(selectedGag => selectedGag.track === "trap");
+      if (alreadySelectedTrap) {
+        // Replace existing trap gag
         setSelected(prev => prev.map(selectedGag => 
           selectedGag.track === "trap" ? {
             track: gag.track,
@@ -135,6 +134,18 @@ export default function GagCalculator() {
 
     return totalDamage;
   }
+  
+  
+  function getOrgDamage(gag) {
+    if (gag.track === "squirt" || gag.track === "drop") 
+      return  Math.ceil((gag.damage * 115) / 100);
+    else 
+      return  Math.ceil((gag.damage * 110) / 100);
+  }
+
+  function getOrgAccuracy(gag) {
+    return gag.track === "lure" ? Math.min(gag.accuracy + 10, 95) : gag.accuracy
+  }
 
   function calculateTrapDamage() {
     const isTrapGag = selected.find(gag => gag.track === "trap"); // Return trap gag
@@ -170,32 +181,36 @@ export default function GagCalculator() {
       .replace(/\b\w/g, c => c.toUpperCase()); // Capitalize first letter of each word
   }
 
+  const handleRemoveGag = (indexToRemove) => {
+    setSelected(prev =>
+      prev.filter((_, i) => i !== indexToRemove)
+    );
+  };
+
   function clear() {
     setSelected([]);
   }
 
   return (
     <div className="w-[90%] max-w-6xl min-w-[850px] bg-red-600 p-6 rounded-3xl shadow-2xl border-4 border-red-700">
-      {/* TOP */}
+      {/* RESULTS BAR */} 
       <div className="bg-gray-100 rounded-xl mb-6 px-4 flex items-center justify-between h-20 overflow-hidden text-center text-gray-700 inner-shadow">
         {selected.length === 0 && ( 
           <p className="text-2xl justify-center w-full font-impress">
             No gags selected
           </p>
         )}    
+
+      {/* SELECTED GAGS */}
       {selected.length > 0 && (
         <div className="flex items-center justify-between gap-4">
-          
-          {/* SELECTED GAGS */}
           <div className="flex gap-3 flex-wrap">
             {selected.map((gag, i) => (
               <div
+                role="button"
+                onClick={() => handleRemoveGag(i)}
                 key={i}
-                className={
-                  i === 0
-                    ? "grid grid-cols-1 items-center"
-                    : "grid grid-cols-[24px_auto] items-center gap-2"
-                }
+                className={i === 0 ? "grid grid-cols-1 items-center" : "grid grid-cols-[24px_auto] items-center gap-2" } // Plus sign for all but first
               >
                 {i > 0 && (
                   <span className="text-neutral-900 text-3xl font-bold flex justify-center">
@@ -203,8 +218,13 @@ export default function GagCalculator() {
                   </span>
                 )}
       
-                <div
-                  className="px-3 py-2 rounded-xl [&>*]:min-w-[48px]"
+                <div // Selected Gag Button
+                  className="
+                  px-3 py-2 rounded-xl [&>*]:min-w-[48px] 
+                  hover:brightness-125
+                  active:brightness-90 active:scale-95
+                  transition duration-150 ease-in-out
+                  "
                   style={{
                     backgroundColor: "#00a2ffff",
                     boxShadow: `
@@ -222,22 +242,24 @@ export default function GagCalculator() {
               </div>
             ))}
           </div>
-          
+
           {/* Total damage */}
           <div className="text-5xl font-impress text-neutral-900/50 whitespace-nowrap">
             = {calculateDamage()}
           </div> 
+
         </div>
       )}
+
+      {/* GAG LIST */}
       </div>  
       <div className="flex gap-4">  
-        {/* LEFT SIDE */}
         <div className="flex-1">
           {gagTracks.map((track) => (
             <div key={track.name} className="flex items-center gap-1">
               
               {/* FULL ROW */}
-              <div
+              <div 
               className="flex gap-2 rounded-xl w-full items-center py-"
               style={{
                   backgroundColor: track.color,
@@ -245,7 +267,7 @@ export default function GagCalculator() {
                   boxShadow: "0 0 15px 4px rgba(0, 0, 0, 0.35)" // glowing shadow
               }}
               >  
-                {/* LABEL */}
+                {/* TRACK LABEL */}
                 <div
                   className="w-24 py-6 flex items-center justify-center text-neutral-950 text-xl font-bold rounded-lg"
                   style={{ backgroundColor: track.color, fontFamily: 'Impress'}}
@@ -270,16 +292,19 @@ export default function GagCalculator() {
                     setHoveredGag(null);
                     setOrganicHovered(false);
                   }}
-                  className="relative px-5 py-1.5 rounded-2xl hover:brightness-110 transition"
+                  className="relative px-5 py-1.5 rounded-2xl
+                  hover:brightness-125
+                  active:brightness-90 active:scale-95
+                  transition duration-150 ease-in-out"
                   style={{
                     backgroundColor: "#00a2ffff",
                     boxShadow: `
                       inset 0 4px 6px rgba(0, 0, 0, 0.25),
-                      2px 2px 0px #1d3b7d
+                      2px 3px 3px #1d3b7d
                     `,
                   }}
                 >
-                  {/* ORGANIC OVERLAY (NOT A BUTTON) */}
+                  {/* ORGANIC OVERLAY */}
                   {hoveredGag?.name === gag.name &&
                     hoveredGag?.track === gag.track && (
                       <div
@@ -318,7 +343,7 @@ export default function GagCalculator() {
 
         {/* RIGHT PANEL */}  
         <div className="w-80 bg-gray-100 rounded-xl p-4 flex flex-col justify-between inner-shadow">  
-        {/* HOVER PREVIEW ONLY */}
+        {/* HOVER PREVIEW */}
           <div className="flex-1 flex flex-col items-center justify-center text-center">  
               {hoveredGag && (
               <div>
@@ -327,8 +352,8 @@ export default function GagCalculator() {
                   className="w-24 h-24 mx-auto"
                   />
                   <h2 className="font-bold text-xl mt-2">{convertGagName(hoveredGag.name)}</h2>
-                  <p className="mt-1 text-lg">Damage: {hoveredGag.damage}</p>
-                  <p className="text-lg">Accuracy: {hoveredGag.accuracy}%</p>
+                  <p className="mt-1 text-lg">Damage: {organicHovered ? getOrgDamage(hoveredGag) : hoveredGag.damage}</p>
+                  <p className="text-lg">Accuracy: {organicHovered ? getOrgAccuracy(hoveredGag) : hoveredGag.accuracy}%</p>
               </div>
               )}  
           </div>  
