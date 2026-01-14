@@ -1,0 +1,7 @@
+-- TAILWIND --
+
+.BOX SHADOW.
+ box-shadow: offset-x offset-y blur-radius spread-radius color;
+ e.g className="shadow-[0_6px_16px_rgba(0,0,0,0.35)]" 
+
+-- REACT --

@@ -1,5 +1,11 @@
 import { useState } from "react";
 
+
+/// GAG CALCULATOR COMPONENT
+// When a gag is selected it is added to the 'selected' array in the parent component which can make calculations with it.
+// Props: selected: array of selected gags
+//        setSelected: function to update selected gags
+//        panelClass: optional string for custom panel styling (menu background color)
 export default function GagCalculator({ selected, setSelected, panelClass = "bg-red-600 border-red-700" }) {
   const gagTracks = [
     { name: "trap", color: "#fffc57ff" },
@@ -76,7 +82,7 @@ export default function GagCalculator({ selected, setSelected, panelClass = "bg-
   };
   
   function addGag(gag, org=false) {
-    if (selected.length >= 5) return; // MAX GAGS SHOWING AT ONCE
+    if (selected.length >= 4) return; // MAX GAGS SHOWING AT ONCE
     
     if (org) {
       gag.org = true;
@@ -152,18 +158,20 @@ export default function GagCalculator({ selected, setSelected, panelClass = "bg-
             <div key={track.name} className="flex items-center gap-1">
               
               {/* FULL ROW */}
-              <div 
-              className="flex gap-2 rounded-xl w-full items-center py-"
-              style={{
+              <div
+                className="relative z-10 flex gap-2 rounded-xl w-full items-center"
+                style={{
                   backgroundColor: track.color,
-                  minHeight: "64px",
-                  boxShadow: "0 0 15px 4px rgba(0, 0, 0, 0.35)" // glowing shadow
-              }}
-              >  
+                  height: "70px",
+                  boxShadow: `
+                    inset 0 1px 6px rgba(0, 0, 0, 0.8),  
+                    0 6px 10px rgba(0, 0, 0, .7)       
+                  `
+                }}
+              >
                 {/* TRACK LABEL */}
                 <div
-                  className="w-24 py-6 flex items-center justify-center text-neutral-950 text-xl font-bold rounded-lg"
-                  style={{ backgroundColor: track.color, fontFamily: 'Impress'}}
+                  className="w-24 py-6 flex items-center justify-center text-neutral-950 text-xl font-bold rounded-3xl font-impress"
                 >
                   {track.name.toUpperCase()}
                 </div>  
@@ -192,8 +200,9 @@ export default function GagCalculator({ selected, setSelected, panelClass = "bg-
                   style={{
                     backgroundColor: "#00a2ffff",
                     boxShadow: `
-                      inset 0 4px 6px rgba(0, 0, 0, 0.25),
-                      2px 3px 3px #1d3b7d
+                      inset 0 0 2px rgb(0, 0, 0, .9),
+                      inset 0 0 5px rgba(0, 0, 0, 0.8),
+                      0 3px 2px #183269
                     `,
                   }}
                 >

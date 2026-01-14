@@ -1,9 +1,17 @@
 import { useState, useMemo } from "react";
 import GagCalculator from "../components/GagCalculator";
+import Toggle from "../components/Toggle";
 
 export default function DamageCalculator() {
   const [selected, setSelected] = useState([]);
-  const [activeMode, setActiveMode] = useState("normal");
+  const [levelsMode, setLevelsMode] = useState("normal");
+  
+  const [modifiers, setModifiers] = useState({
+  DPS: false,
+  ARMOR: false,
+  HP: false,
+  CRIT: false,
+  });
 
   const currentTotalDamage = useMemo(() => calculateDamage(), [selected]);
 
@@ -30,73 +38,46 @@ export default function DamageCalculator() {
     { level: 20, health: 476 },
   ];
 
-  const levelsFieldOffice = [
-    { level: 9, health: 110 },
-    { level: 10, health: 132 },
-    { level: 11, health: 156 },
-    { level: 12, health: 196 },
-    { level: 13, health: 224 },
-    { level: 14, health: 254 },
-    { level: 17, displayLevel: "1 ⭐", health: 4000, color: "#FF5900" },
-    { level: 18, displayLevel: "2 ⭐", health: 4500, color: "#FF5900" },
-    { level: 19, displayLevel: "3 ⭐", health: 5000, color: "#FF5900" },
-    { level: 20, displayLevel: "4 ⭐", health: 5500, color: "#FF5900" },
-  ];
-
   const levelsSupers = [
-    { level: 1, displayLevel: "Scrap", health: 250, color: "#B86E89"},
-    { level: 2, displayLevel: "Steel", health: 750, color: "#B86E89" },
-    { level: 3, displayLevel: "Coin", health: 750, color: "#54AB8C" },
-    { level: 4, displayLevel: "Bull", health: 1150, color: "#54AB8C" },
-    { level: 5, displayLevel: "Junior", health: 1100, color: "#5483B0" },
-    { level: 6, displayLevel: "Senior", health: 1500, color: "#5483B0" },
-    { level: 7, displayLevel: "Fairway", health: 1200, color: "#5483B0"},
-    { level: 8, displayLevel: "Fringe", health: 1750, color: "#5483B0" },
+    { level: 1, displayLevel: "Scrap", health: 250, color: "#9e5c75"},
+    { level: 2, displayLevel: "Steel", health: 750, color: "#9e5c75" },
+    { level: 3, displayLevel: "Coin", health: 750, color: "#287c5f" },
+    { level: 4, displayLevel: "Bull", health: 1150, color: "#287c5f" },
+    { level: 5, displayLevel: "Junior", health: 1100, color: "#3F5A96" },
+    { level: 6, displayLevel: "Senior", health: 1500, color: "#3F5A96" },
+    { level: 7, displayLevel: "Fairway", health: 1200, color: "#702F0C"},
+    { level: 8, displayLevel: "Fringe", health: 1750, color: "#702F0C" },
   ];
 
-  const levelsBoss = [
-    { level: 1, health: 6 },
-    { level: 2, health: 12 },
-    { level: 3, health: 20 },
-    { level: 4, health: 30 },
-    { level: 5, health: 42 },
-    { level: 6, health: 56 },
-    { level: 7, health: 72 },
-    { level: 8, health: 90 },
-    { level: 9, health: 110 },
-    { level: 10, health: 132 },
-    { level: 11, health: 156 },
-    { level: 12, health: 196 },
-    { level: 13, health: 224 },
-    { level: 14, health: 254 },
-    { level: 15, health: 286 },
-    { level: 16, health: 320 },
-    { level: 17, health: 356, color: "#00FFFF" },
-    { level: 18, health: 394, color: "#00FFFF" },
-    { level: 19, health: 434, color: "#00FFFF" },
-    { level: 20, health: 476, color: "#00FFFF" },
+  const levelsFieldOffice = [
+
+    { level: 1, displayLevel: "1★ Boiler", health: 4000},
+    { level: 18, displayLevel: "2★ Boiler", health: 4500},
+    { level: 19, displayLevel: "3★ Boiler", health: 5000},
+    { level: 20, displayLevel: "4★ Boiler", health: 5500},
   ];
 
   const levelModes = [
     {
       id: "normal",
       levels: levelsNormal,
-      image: "/images/buttons/modes/normal.webp",
+      image: "/images/ui/modes/normal.webp",
     },
     {
       id: "field-office",
       levels: levelsFieldOffice,
-      image: "/images/buttons/modes/field-office.webp"
-    },
+      image: "/images/ui/modes/field-office.webp"
+    },    
     {
       id: "supervisors",
       levels: levelsSupers,
-      image: "/images/buttons/modes/supervisors.webp"
+      image: "/images/ui/modes/supervisors.webp"
     },    
+
   ];
   
   const levels =
-  levelModes.find(mode => mode.id === activeMode)?.levels
+  levelModes.find(mode => mode.id === levelsMode)?.levels
   ?? [];
 
 
@@ -109,8 +90,11 @@ export default function DamageCalculator() {
     }
     return 0;
   }
+
+  // Calculate total damage of all currently selected gags
   function calculateDamage() {
     if (selected.length === 0) return 0;
+
     let totalDamage = 0;
     totalDamage += calculateTrapDamage();
     const organizedGags = getOrganizedGags();
@@ -137,6 +121,7 @@ export default function DamageCalculator() {
     return totalDamage;
   }
 
+  // Organize selected gags by track, excluding trap
   function getOrganizedGags() {
     const groupedGags = {};
 
@@ -154,6 +139,7 @@ export default function DamageCalculator() {
     return groupedGags;
   }
 
+  // Remove gag from selected
   const handleRemoveGag = (indexToRemove) => {
     setSelected(prev =>
       prev.filter((_, i) => i !== indexToRemove)
@@ -169,16 +155,23 @@ export default function DamageCalculator() {
       }}
     >
 
-    <h1
-      className="
-        text-7xl font-bold mb-4 text-yellow-300 py-10 font-minnie
-        [text-shadow:0_5px_0_rgba(0,0,0,0.9),0_10px_20px_rgba(0,0,0,0.4)]
-      "
-    >
-      Damage Calculator
-    </h1>
-
+      <h1
+        className="
+          text-7xl font-bold mb-4 text-yellow-300 py-10 font-minnie
+          [text-shadow:0_5px_0_rgba(0,0,0,0.9),0_10px_20px_rgba(0,0,0,0.4)]
+        "
+      >
+        Damage Calculator
+      </h1>
       {/* COG LEVELS */ }
+      <div className="bg-gray-400 p-3 rounded-t-2xl -mb-3">
+        <div className="flex justify-center gap-4">
+          <Toggle icon="/images/ui/modifiers/damage-up.png" label="DPS" onChange={(value) => console.log("DPS:", value)}/>
+          <Toggle icon="/images/ui/modifiers/defense-up-boiler.png" label="Armor" onChange={(value) => console.log("Armor:", value)}/>
+          <Toggle icon="/images/ui/modifiers/overpaid.png" label="HP" onChange={(value) => console.log("HP:", value)}/>
+          <Toggle icon="/images/ui/modifiers/defense-down.png" label="Crit" onChange={(value) => console.log("Crit:", value)}/>
+        </div>
+      </div>
       <div
         className="
           w-[90%] max-w-6xl min-w-[850px]
@@ -187,7 +180,9 @@ export default function DamageCalculator() {
           p-3
           mb-4
           rounded-2xl
-          shadow-[0_12px_36px_rgba(0,0,0,0.4)]
+          shadow-[0_8px_8px_rgba(0,0,0,0.3)]
+          flex flex-col
+          gap-2
         "
       >
         <div className="flex h-full items-center overflow-hidden">
@@ -216,13 +211,12 @@ export default function DamageCalculator() {
                   className={`
                     pointer-events-none
                     absolute inset-0
-                    border-4
-                    ${entry.pulse ? "animate-pulse" : ""}
+                    border-2
                   `}
                   style={{
                     borderStyle: "solid",
                     borderColor: `${entry.color}`,
-                    backgroundColor: `${entry.color}44`, // ~~27% opacity
+                    backgroundColor: `${entry.color}22`,
                   }}
                 />
               )}
@@ -237,21 +231,18 @@ export default function DamageCalculator() {
         </div>
       </div>
 
-      {/* MODE BUTTONS */ }
+      {/* COG LEVEL MODES */ }
       <div className="flex gap-4 justify-center mb-4">
         {levelModes.map(mode => {
-          const isActive = activeMode === mode.id;
+          const isActive = levelsMode === mode.id;
           return (
             <button
               key={mode.id}
-              onClick={() => setActiveMode(mode.id)}
+              onClick={() => setLevelsMode(mode.id)}
               className={`
                 relative
-                p-1
-                rounded-xl
-                border-2
-                transition
-                duration-150
+                p-1 rounded-xl border-2
+                transition duration-150
                 ${isActive
                   ? "border-yellow-400 bg-yellow-300/20 shadow-[0_4px_0_rgba(0,0,0,0.8)]"
                   : "border-black/40 bg-black/20 hover:bg-black/30"
@@ -264,9 +255,8 @@ export default function DamageCalculator() {
                 src={mode.image}
                 alt={mode.id}
                 className={`
-                  w-[200px]
-                  h-[60px]
-                  object-contain
+                  w-[200px] h-[60px]
+                  rounded-lg
                   transition
                   ${isActive
                     ? "brightness-110"

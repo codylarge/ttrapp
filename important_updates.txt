@@ -1,0 +1,9 @@
+https://www.toontownrewritten.com/news/release-notes/367 
+ Increased Trap Activation Stun Bonus from 30% to 50% 
+ Additional traps give +5% accuracy bonus each for lure
+
+https://cdn.toontownrewritten.com/community/notices/Toontown_Rewritten_Rebalancing_v4.0.0_Patch_Notes.pdf
+ Stun 20% -> 25%
+ Changed lure accuracies
+ Multi-Lure Mechanic
+ Trap 10% accuracy bonus for lure

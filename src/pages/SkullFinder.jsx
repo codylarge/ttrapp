@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 
 export default function SkullFinder() {
-  const size = 7;              // 8x8 board
-  const bombsCount = 10;       // number of bombs
+  const SIZE = 7;        // SIZE x SIZE board
+  let bombsCount = 10; // Total # of bombs
 
   const [board, setBoard] = useState([]);
   const [gameOver, setGameOver] = useState(false);
@@ -14,17 +14,17 @@ export default function SkullFinder() {
   }, []);
 
   function resetGame() {
-    const newBoard = generateBoard(size, bombsCount);
+    const newBoard = generateBoard(SIZE, bombsCount);
     setBoard(newBoard);
     setGameOver(false);
     setFlagsUsed(0);
   }
 
   // Generate board with bombs placed randomly
-  function generateBoard(size, bombsCount) {
+  function generateBoard(SIZE, bombsCount) {
     // Create empty board
-    const board = Array.from({ length: size }, () =>
-      Array.from({ length: size }, () => ({
+    const board = Array.from({ length: SIZE }, () =>
+      Array.from({ length: SIZE }, () => ({
         revealed: false,
         bomb: false,
         flag: false,
@@ -35,8 +35,8 @@ export default function SkullFinder() {
     // Place bombs randomly
     let placed = 0;
     while (placed < bombsCount) {
-      const r = Math.floor(Math.random() * (size - 1)); // Dont generate on bottom row
-      const c = Math.floor(Math.random() * size);
+      const r = Math.floor(Math.random() * (SIZE - 1)); // Dont generate skulls on bottom row
+      const c = Math.floor(Math.random() * SIZE);
       if (!board[r][c].bomb) {
         board[r][c].bomb = true;
         placed++;
@@ -44,8 +44,8 @@ export default function SkullFinder() {
     }
 
     // Calculate numbers
-    for (let r = 0; r < size; r++) {
-      for (let c = 0; c < size; c++) {
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
         if (board[r][c].bomb) continue;
 
         let num = 0;
@@ -53,7 +53,7 @@ export default function SkullFinder() {
           for (let cc = -1; cc <= 1; cc++) {
             const nr = r + rr;
             const nc = c + cc;
-            if (nr >= 0 && nr < size && nc >= 0 && nc < size && board[nr][nc].bomb) {
+            if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && board[nr][nc].bomb) {
               num++;
             }
           }
@@ -100,8 +100,8 @@ export default function SkullFinder() {
         const nr = r + rr;
         const nc = c + cc;
         if (
-          nr >= 0 && nr < size &&
-          nc >= 0 && nc < size &&
+          nr >= 0 && nr < SIZE &&
+          nc >= 0 && nc < SIZE &&
           !board[nr][nc].revealed &&
           !board[nr][nc].bomb
         ) {
@@ -160,8 +160,8 @@ export default function SkullFinder() {
       <div
         className="grid"
         style={{
-          gridTemplateColumns: `repeat(${size}, calc(65vh / ${size}))`,
-          gridTemplateRows: `repeat(${size}, calc(65vh / ${size}))`,
+          gridTemplateColumns: `repeat(${SIZE}, calc(65vh / ${SIZE}))`,
+          gridTemplateRows: `repeat(${SIZE}, calc(65vh / ${SIZE}))`,
           gap: "14px",
         }}
       >
@@ -178,8 +178,8 @@ export default function SkullFinder() {
                 ${cell.revealed ? "bg-transparent" : ""}
               `}
               style={{
-                width: `calc(75vh / ${size})`,
-                height: `calc(75vh / ${size})`,
+                width: `calc(75vh / ${SIZE})`,
+                height: `calc(75vh / ${SIZE})`,
 
                 /* NEW COLORS */
                 background: cell.revealed
@@ -188,8 +188,8 @@ export default function SkullFinder() {
 
                 /* NEW BORDERS + GLOW */
                 border: cell.revealed
-                  ? "none"                              // no border when revealed
-                  : "3px solid rgba(0, 0, 0, 1)",        // black border when unrevealed
+                  ? "none"                           // no border when revealed
+                  : "3px solid rgba(0, 0, 0, 1)", // black border when unrevealed
 
                 boxShadow: cell.revealed
                   ? "none"

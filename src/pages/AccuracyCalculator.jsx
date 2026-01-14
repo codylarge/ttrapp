@@ -94,7 +94,7 @@ export default function AccuracyCalculator() {
                 ${selected.length === 0 
                   ? "bg-gray-500"  // When no gags selected, make it gray
                   : currentTotalAccuracy + entry.def >= 95
-                  ? "bg-green-500"  // When totalDamage surpasses health, green
+                  ? "bg-green-500"  // When currentTotalAccuracy >= 95, green
                   : "bg-red-500"  // Otherwise, red
                 }
               `}
@@ -130,7 +130,7 @@ export default function AccuracyCalculator() {
                     role="button"
                     onClick={() => handleRemoveGag(i)}
                     key={i}
-                    className={i === 0 ? "grid grid-cols-1 items-center" : "grid grid-cols-[24px_auto] items-center gap-2" } // Plus sign for all but first
+                    className={i === 0 ? "grid grid-cols-1 items-center" : "grid grid-cols-[24px_auto] items-center gap-2" } // Plus sign before all gags but first
                   >
                     {i > 0 && (
                       <span className="text-neutral-900 text-3xl font-bold flex justify-center">
@@ -138,7 +138,7 @@ export default function AccuracyCalculator() {
                       </span>
                     )}
           
-                    <div // Selected Gag Button
+                    <div /* Selected Gag Button */
                       className="
                       px-3 py-2 rounded-xl [&>*]:min-w-[48px] 
                       hover:brightness-125
