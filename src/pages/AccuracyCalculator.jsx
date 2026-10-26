@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import GagCalculator from "../components/GagCalculator";
+import SelectedGag from "../components/SelectedGag";
 
 export default function AccuracyCalculator() {
   const [selected, setSelected] = useState([]);
@@ -126,40 +127,12 @@ export default function AccuracyCalculator() {
             <div className="flex items-center justify-between gap-4">
               <div className="flex gap-3 flex-wrap">
                 {selected.map((gag, i) => (
-                  <div
-                    role="button"
-                    onClick={() => handleRemoveGag(i)}
+                  <SelectedGag
                     key={i}
-                    className={i === 0 ? "grid grid-cols-1 items-center" : "grid grid-cols-[24px_auto] items-center gap-2" } // Plus sign before all gags but first
-                  >
-                    {i > 0 && (
-                      <span className="text-neutral-900 text-3xl font-bold flex justify-center">
-                        +
-                      </span>
-                    )}
-          
-                    <div /* Selected Gag Button */
-                      className="
-                      px-3 py-2 rounded-xl [&>*]:min-w-[48px] 
-                      hover:brightness-125
-                      active:brightness-90 active:scale-95
-                      transition duration-150 ease-in-out
-                      "
-                      style={{
-                        backgroundColor: gag.org ? "#FFBB00" : "#00a2ffff", 
-                        boxShadow: `
-                          inset 0 4px 6px rgba(0, 0, 0, 0.25),
-                          2px 2px 0px #1d3b7d
-                        `,
-                      }}
-                    >
-                      <img
-                        src={`/images/gags/${gag.track.toLowerCase()}/${gag.name}.webp`}
-                        alt={gag.name}
-                        className="w-14 h-9 object-contain min-w-[36px] min-h-[36px]"
-                      />
-                    </div>
-                  </div>
+                    gag={gag}
+                    showPlus={i > 0}
+                    onRemove={() => handleRemoveGag(i)}
+                  />
                 ))}
               </div>
     

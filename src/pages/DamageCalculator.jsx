@@ -1,20 +1,66 @@
 import { useState, useMemo } from "react";
 import GagCalculator from "../components/GagCalculator";
+import SelectedGag from "../components/SelectedGag";
+import DamageSummary from "../components/DamageSummary";
+import RoundHistory from "../components/RoundHistory";
 import Toggle from "../components/Toggle";
+import { MAX_SELECTED, createSelectedGag } from "../data/gags";
+
+// Modifier toggles in display order. type says which state object the key belongs to
+const MODIFIER_TOGGLES = [
+  { key: "damageUp", type: "gag", icon: "/images/ui/modifiers/damage-up.png" },
+  { key: "defenseUp", type: "gag", icon: "/images/ui/modifiers/defense-up-boiler.png" },
+  { key: "overpaidCoin", type: "cog", icon: "/images/ui/modifiers/overpaid.png" },
+  { key: "defenseDown", type: "gag", icon: "/images/ui/modifiers/defense-down.png" },
+];
 
 export default function DamageCalculator() {
   const [selected, setSelected] = useState([]);
+  const [rounds, setRounds] = useState([]); // Saved rounds: { gags, modifiers, total }
+  const [editingIndex, setEditingIndex] = useState(null); // Index of the round open in the calculator, or null for a new round
+  const [hoverPreview, setHoverPreview] = useState(null); // { gag, organic } of the hovered gag, or null
   const [levelsMode, setLevelsMode] = useState("normal");
-  
-  const [modifiers, setModifiers] = useState({
-  DPS: false,
-  ARMOR: false,
-  HP: false,
-  CRIT: false,
+
+  const [cogModifiers, setCogModifiers] = useState({
+    overpaidCoin: { active: false, effect: 200 }, // Bonus HP added to each cog
+    overpaidBull: { active: false, effect: 200 }
   });
 
-  const currentTotalDamage = useMemo(() => calculateDamage(), [selected]);
+  const [gagModifiers, setGagModifiers] = useState({
+    damageUp: { active: false, effect: 1.5 },     // Gags deal +50% damage
+    defenseDown: { active: false, effect: 1.2 },  // Gags deal +20% damage
+    defenseUp: { active: false, effect: 0.75 }    // Gags deal 75% damage
+  });
 
+  // Shield overlays shown on the cog levels bar, color is "r, g, b"
+  const shieldEffects = [
+    { active: cogModifiers.overpaidCoin.active, color: "34, 197, 94" },
+    { active: gagModifiers.defenseUp.active, color: "0, 205, 255"},    
+    { active: gagModifiers.defenseDown.active, color: "239, 68, 68" }, 
+  ].filter(shield => shield.active);
+
+  const damageBreakdown = useMemo(() => calculateDamage(), [selected, gagModifiers, cogModifiers]);
+  const currentTotalDamage = damageBreakdown.total;
+
+  // Cog health bar counts damage from every saved round plus the current one
+  // The round being edited is skipped, the calculator holds its new version
+  const previousRoundsDamage = rounds.reduce((sum, round, i) => i === editingIndex ? sum : sum + round.total, 0);
+  const overallDamage = previousRoundsDamage + currentTotalDamage;
+
+  // Damage preview while hovering a gag: what the cogs would take if it were added
+  // null when nothing is hovered or no more gags can be added
+  const previewOverallDamage = hoverPreview && selected.length < MAX_SELECTED
+    ? previousRoundsDamage + calculateDamage([...selected, createSelectedGag(hoverPreview.gag, hoverPreview.organic)]).total
+    : null;
+
+  // Cog cell colour. Solid colours show real damage, lighter ones show the hover preview
+  function getCogCellColor(health) {
+    if (overallDamage >= health) return "bg-green-500";                                       // Defeated
+    if (previewOverallDamage !== null && previewOverallDamage >= health) return "bg-green-300"; // Would be defeated
+    if (overallDamage > 0) return "bg-red-500";                                               // Damaged, survives
+    return "bg-gray-500";
+  }
+  
   const levelsNormal = [
     { level: 1, health: 6 },
     { level: 2, health: 12 },
@@ -52,9 +98,9 @@ export default function DamageCalculator() {
   const levelsFieldOffice = [
 
     { level: 1, displayLevel: "1★ Boiler", health: 4000},
-    { level: 18, displayLevel: "2★ Boiler", health: 4500},
-    { level: 19, displayLevel: "3★ Boiler", health: 5000},
-    { level: 20, displayLevel: "4★ Boiler", health: 5500},
+    { level: 2, displayLevel: "2★ Boiler", health: 4500},
+    { level: 3, displayLevel: "3★ Boiler", health: 5000},
+    { level: 4, displayLevel: "4★ Boiler", health: 5500},
   ];
 
   const levelModes = [
@@ -64,26 +110,69 @@ export default function DamageCalculator() {
       image: "/images/ui/modes/normal.webp",
     },
     {
-      id: "field-office",
-      levels: levelsFieldOffice,
-      image: "/images/ui/modes/field-office.webp"
-    },    
-    {
       id: "supervisors",
       levels: levelsSupers,
       image: "/images/ui/modes/supervisors.webp"
     },    
-
   ];
+
+  function applyGagModifiers(baseDamage) { 
+    let modifiedDamage = baseDamage;
+
+    Object.values(gagModifiers).forEach(modifier => {
+      if (modifier.active) {
+      modifiedDamage *= modifier.effect;
+      }
+    });
+
+    return Math.ceil(modifiedDamage);
+  };
+
+  // Cog health including active cog modifiers (e.g. overpaid bonus HP)
+  function getCogHealth(baseHealth) {
+    let health = baseHealth;
+
+    Object.values(cogModifiers).forEach(modifier => {
+      if (modifier.active) {
+        health += modifier.effect;
+      }
+    });
+
+    return health;
+  }
+
+
   
   const levels =
   levelModes.find(mode => mode.id === levelsMode)?.levels
   ?? [];
 
+  const handleGagToggle = (key, value) => {
+    setGagModifiers(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        active: value,
+      },
+    }));
+  };
 
-  function calculateTrapDamage() {
-    const isTrapGag = selected.find(gag => gag.track === "trap"); // Return trap gag
-    const isLureGag = selected.some(gag => gag.track === "lure"); // Return lure gag
+  const handleCogToggle = (key, value) => {
+    setCogModifiers(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        active: value,
+      },
+    }));
+  };
+
+  // The damage functions below take a list of gags, so they can calculate the
+  // real selection or a preview (selection + hovered gag)
+
+  function calculateTrapDamage(gags) {
+    const isTrapGag = gags.find(gag => gag.track === "trap"); // Return trap gag
+    const isLureGag = gags.some(gag => gag.track === "lure"); // Return lure gag
 
     if (isTrapGag && isLureGag) {
       return isTrapGag.damage;
@@ -91,42 +180,77 @@ export default function DamageCalculator() {
     return 0;
   }
 
-  // Calculate total damage of all currently selected gags
-  function calculateDamage() {
-    if (selected.length === 0) return 0;
+  // Return the track that gets lure knockback (+50%), or null
+  // Trap and sound unlure the cog, so no bonus applies when either is used
+  function getLureBonusTrack(gags, organizedGags) {
+    const hasLure = gags.some(gag => gag.track === "lure");
+    const hasTrap = gags.some(gag => gag.track === "trap");
+    const hasSound = gags.some(gag => gag.track === "sound");
 
-    let totalDamage = 0;
-    totalDamage += calculateTrapDamage();
-    const organizedGags = getOrganizedGags();
-
-    for (const track in organizedGags) {
-      let trackDamage = 0;
-      const trackGags = organizedGags[track];
-      console.log(track);
-      for (let i = 0; i < trackGags.length; i++) {
-        trackDamage += trackGags[i].damage;
-      }
-
-      let boostedDamage = 0;
-      if (trackGags.length > 1) {
-        boostedDamage = Math.ceil(trackDamage * 1.2);
-        totalDamage += boostedDamage;
-      }
-
-      else {
-        totalDamage += trackGags[0].damage;
-      }
-      
-    }
-    return totalDamage;
+    if (!hasLure || hasTrap || hasSound) return null;
+    if (organizedGags.throw) return "throw"; // Throw always goes before squirt
+    if (organizedGags.squirt) return "squirt";
+    return null;
   }
 
-  // Organize selected gags by track, excluding trap
-  function getOrganizedGags() {
+  // Drop misses when the cog is still lured, i.e. lure is used and nothing unlures it first
+  // Trap (springs on lure), sound (wakes it), throw and squirt (knock it back) all unlure
+  function doesDropMiss(gags) {
+    const hasLure = gags.some(gag => gag.track === "lure");
+    const unlured = gags.some(gag => ["trap", "sound", "throw", "squirt"].includes(gag.track));
+    return hasLure && !unlured;
+  }
+
+  // Product of all active gag modifiers (e.g. 1.5 for damage up)
+  function getModifierMultiplier() {
+    return Object.values(gagModifiers)
+      .filter(modifier => modifier.active)
+      .reduce((total, modifier) => total * modifier.effect, 1);
+  }
+
+  // Calculate damage of a list of gags (the current selection by default), split into each part
+  // trackDamage: { trap: 18, throw: 200, ... } raw damage per track (lure excluded, it deals none)
+  function calculateDamage(gags = selected) {
+    const breakdown = { trackDamage: {}, lureBonus: 0, groupBonus: 0, multiplier: getModifierMultiplier(), total: 0 };
+    if (gags.length === 0) return breakdown;
+
+    if (gags.some(gag => gag.track === "trap")) {
+      breakdown.trackDamage.trap = calculateTrapDamage(gags);
+    }
+
+    const organizedGags = getOrganizedGags(gags);
+    const lureBonusTrack = getLureBonusTrack(gags, organizedGags);
+    const dropMisses = doesDropMiss(gags);
+
+    for (const track in organizedGags) {
+      if (track === "lure") continue;
+
+      // Drop misses a lured cog, so it deals nothing (no group bonus either)
+      if (track === "drop" && dropMisses) {
+        breakdown.trackDamage.drop = 0;
+        continue;
+      }
+
+      const trackGags = organizedGags[track];
+      const trackDamage = trackGags.reduce((sum, gag) => sum + gag.damage, 0);
+
+      breakdown.trackDamage[track] = trackDamage;
+      if (trackGags.length > 1) breakdown.groupBonus += Math.ceil(trackDamage * 0.2); // Combo bonus
+      if (track === lureBonusTrack) breakdown.lureBonus += Math.ceil(trackDamage * 0.5); // Lure knockback bonus
+    }
+
+    const baseDamage = Object.values(breakdown.trackDamage).reduce((sum, damage) => sum + damage, 0);
+    breakdown.total = applyGagModifiers(baseDamage + breakdown.groupBonus + breakdown.lureBonus);
+
+    return breakdown;
+  }
+
+  // Organize gags by track, excluding trap
+  function getOrganizedGags(gags) {
     const groupedGags = {};
 
-    for (let i = 0; i < selected.length; i++) {
-      const gag = selected[i];
+    for (let i = 0; i < gags.length; i++) {
+      const gag = gags[i];
 
       if (gag.track === "trap") continue;
 
@@ -146,6 +270,109 @@ export default function DamageCalculator() {
     );
   };
 
+  // Modifier toggles that are currently on
+  function getActiveModifiers() {
+    return MODIFIER_TOGGLES.filter(modifier => {
+      const modifiers = modifier.type === "gag" ? gagModifiers : cogModifiers;
+      return modifiers[modifier.key].active;
+    });
+  }
+
+  // The calculator's current gags and modifiers as a round
+  function makeCurrentRound() {
+    return { gags: selected, modifiers: getActiveModifiers(), total: currentTotalDamage };
+  }
+
+  // Put a saved round's gags and modifiers back into the calculator
+  function loadRound(round) {
+    const activeKeys = new Set(round.modifiers.map(modifier => modifier.key));
+    const setActive = prev => Object.fromEntries(
+      Object.entries(prev).map(([key, modifier]) => [key, { ...modifier, active: activeKeys.has(key) }])
+    );
+
+    setSelected(round.gags);
+    setGagModifiers(setActive);
+    setCogModifiers(setActive);
+  }
+
+  // Write the calculator into the round being edited. With no gags left the round is removed
+  // Returns the new rounds list and whether the round was removed
+  function commitEdit() {
+    const updated = [...rounds];
+    const removed = selected.length === 0;
+
+    if (removed) updated.splice(editingIndex, 1);
+    else updated[editingIndex] = makeCurrentRound();
+
+    return { updated, removed };
+  }
+
+  // Save the current gags and modifiers as a round, then start a fresh one
+  // Modifiers stay on for the next round
+  // While a round is open, its edits are saved and a fresh round starts
+  function handleNewRound() {
+    if (isEditing) {
+      setRounds(commitEdit().updated);
+      setEditingIndex(null);
+      setSelected([]);
+      return;
+    }
+
+    if (selected.length === 0) return;
+
+    setRounds(prev => [...prev, makeCurrentRound()]);
+    setSelected([]);
+  }
+
+  // Open a saved round in the calculator for editing
+  // Any gags in progress are saved as a new round first
+  function handleSelectRound(index) {
+    if (index === editingIndex) return;
+
+    let nextRounds = rounds;
+    let target = index;
+
+    if (isEditing) {
+      // Switching rounds commits the edit to the round that was open
+      const { updated, removed } = commitEdit();
+      nextRounds = updated;
+      if (removed && index > editingIndex) target -= 1;
+    } else if (selected.length > 0) {
+      nextRounds = [...rounds, makeCurrentRound()];
+    }
+
+    setRounds(nextRounds);
+    setEditingIndex(target);
+    loadRound(nextRounds[target]);
+  }
+
+  // Delete a saved round
+  function handleRemoveRound(index) {
+    setRounds(prev => prev.filter((_, i) => i !== index));
+
+    if (index === editingIndex) {
+      // Removing the open round starts a fresh round
+      setEditingIndex(null);
+      setSelected([]);
+    } else if (isEditing && index < editingIndex) {
+      setEditingIndex(editingIndex - 1); // Open round shifted down
+    }
+  }
+
+  // Delete every saved round but keep the gags in the calculator
+  // If a round was being edited, its gags become the new current round
+  function handleResetRounds() {
+    setRounds([]);
+    setEditingIndex(null);
+  }
+
+  const isEditing = editingIndex !== null;
+
+  // Rounds as shown in the panel. The open round shows its live edits, they're saved when it's closed
+  const displayRounds = isEditing
+    ? rounds.map((round, i) => i === editingIndex ? makeCurrentRound() : round)
+    : rounds;
+
 
   return (
     <div
@@ -157,27 +384,34 @@ export default function DamageCalculator() {
 
       <h1
         className="
-          text-7xl font-bold mb-4 text-yellow-300 py-10 font-minnie
+          text-5xl xl:text-7xl font-bold mb-4 text-yellow-300 py-6 xl:py-10 font-minnie
           [text-shadow:0_5px_0_rgba(0,0,0,0.9),0_10px_20px_rgba(0,0,0,0.4)]
         "
       >
         Damage Calculator
       </h1>
-      {/* COG LEVELS */ }
+      {/* MODIFIERS */ }
       <div className="bg-gray-400 p-3 rounded-t-2xl -mb-3">
         <div className="flex justify-center gap-4">
-          <Toggle icon="/images/ui/modifiers/damage-up.png" label="DPS" onChange={(value) => console.log("DPS:", value)}/>
-          <Toggle icon="/images/ui/modifiers/defense-up-boiler.png" label="Armor" onChange={(value) => console.log("Armor:", value)}/>
-          <Toggle icon="/images/ui/modifiers/overpaid.png" label="HP" onChange={(value) => console.log("HP:", value)}/>
-          <Toggle icon="/images/ui/modifiers/defense-down.png" label="Crit" onChange={(value) => console.log("Crit:", value)}/>
+          {MODIFIER_TOGGLES.map(modifier => (
+            <Toggle
+              key={modifier.key}
+              icon={modifier.icon}
+              toggleKey={modifier.key}
+              on={(modifier.type === "gag" ? gagModifiers : cogModifiers)[modifier.key].active}
+              onToggle={modifier.type === "gag" ? handleGagToggle : handleCogToggle}
+            />
+          ))}
         </div>
+
       </div>
+      {/* COG LEVELS */ }
       <div
         className="
           w-[90%] max-w-6xl min-w-[850px]
-          h-20
+          h-16 xl:h-20
           bg-gray-400
-          p-3
+          p-2 xl:p-3
           mb-4
           rounded-2xl
           shadow-[0_8px_8px_rgba(0,0,0,0.3)]
@@ -186,7 +420,9 @@ export default function DamageCalculator() {
         "
       >
         <div className="flex h-full items-center overflow-hidden">
-          {levels.map((entry, i) => (
+          {levels.map((entry, i) => {
+            const health = getCogHealth(entry.health);
+            return (
             <div
               key={i}
               className={`
@@ -198,12 +434,8 @@ export default function DamageCalculator() {
                 border-2 border-gray-900
                 text-gray-900
                 font-remington
-                ${currentTotalDamage === 0 
-                  ? "bg-gray-500"
-                  : currentTotalDamage >= entry.health 
-                  ? "bg-green-500"
-                  : "bg-red-500"
-                }
+                ${getCogCellColor(health)}
+                transition-colors duration-150
               `}
             >
               {entry.color && (
@@ -220,14 +452,24 @@ export default function DamageCalculator() {
                   }}
                 />
               )}
-              <div className="text-lg font-bold leading-none">
+              {/* SHIELD EFFECTS - each active shield is a ring further in so they all stay visible */}
+              {shieldEffects.map((shield, j) => (
+                <div
+                  key={shield.color}
+                  className="shield-effect z-10"
+                  style={{ "--shield-rgb": shield.color, inset: `${j * 4}px` }}
+                />
+              ))}
+              <div className="text-sm xl:text-lg font-bold leading-none">
                 {entry.displayLevel ?? entry.level}
               </div>
-              <div className="text-s leading-none mt-1 opacity-90">
-                {entry.health - currentTotalDamage < 0 ? 0 : entry.health - currentTotalDamage}
+              {/* Remaining HP, includes the hover preview */}
+              <div className="text-xs xl:text-base leading-none mt-1 opacity-90">
+                {Math.max(health - (previewOverallDamage ?? overallDamage), 0)}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -255,7 +497,7 @@ export default function DamageCalculator() {
                 src={mode.image}
                 alt={mode.id}
                 className={`
-                  w-[200px] h-[60px]
+                  w-[150px] h-[45px] xl:w-[200px] xl:h-[60px]
                   rounded-lg
                   transition
                   ${isActive
@@ -272,67 +514,81 @@ export default function DamageCalculator() {
 
 
       {/* RESULTS BAR */ }
-      <div className="w-[90%] max-w-6xl min-w-[850px] bg-red-600 pt-6 px-3 pb-1 rounded-3xl shadow-2xl border-4 border-red-700">
+      <div className="w-[90%] max-w-6xl min-w-[850px] bg-red-600 pt-4 xl:pt-6 px-3 pb-1 rounded-3xl shadow-2xl border-4 border-red-700">
 
-        <div className="bg-gray-100 rounded-xl mb-6 px-4 flex items-center justify-between h-20 overflow-hidden text-center text-gray-700 inner-shadow">
-          {selected.length === 0 && ( 
-            <p className="text-2xl justify-center w-full font-impress">
+        <div className="bg-gray-100 rounded-xl mb-4 xl:mb-6 px-3 xl:px-4 flex items-center justify-between gap-4 h-16 xl:h-20 overflow-hidden text-center text-gray-700 inner-shadow">
+          {selected.length === 0 && (
+            <p className="text-xl xl:text-2xl flex-1 font-impress">
               No gags selected
             </p>
-          )}    
-  
-          {/* SELECTED GAGS */}
+          )}
+
+          {/* SELECTED GAGS - always a single row */}
           {selected.length > 0 && (
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex gap-3 flex-wrap">
+            <div className="flex items-center gap-2 xl:gap-4 min-w-0">
+              <div className="flex flex-nowrap gap-1.5 xl:gap-3">
                 {selected.map((gag, i) => (
-                  <div
-                    role="button"
-                    onClick={() => handleRemoveGag(i)}
+                  <SelectedGag
                     key={i}
-                    className={i === 0 ? "grid grid-cols-1 items-center" : "grid grid-cols-[24px_auto] items-center gap-2" } // Plus sign for all but first
-                  >
-                    {i > 0 && (
-                      <span className="text-neutral-900 text-3xl font-bold flex justify-center">
-                        +
-                      </span>
-                    )}
-          
-                    <div // Selected Gag Button
-                      className="
-                      px-3 py-2 rounded-xl [&>*]:min-w-[48px] 
-                      hover:brightness-125
-                      active:brightness-90 active:scale-95
-                      transition duration-150 ease-in-out
-                      "
-                      style={{
-                        backgroundColor: gag.org ? "#FFBB00" : "#00a2ffff", // teal-green when organic
-                        boxShadow: `
-                          inset 0 4px 6px rgba(0, 0, 0, 0.25),
-                          2px 2px 0px #1d3b7d
-                        `,
-                      }}
-                    >
-                      <img
-                        src={`/images/gags/${gag.track.toLowerCase()}/${gag.name}.webp`}
-                        alt={gag.name}
-                        className="w-14 h-9 object-contain min-w-[36px] min-h-[36px]"
-                      />
-                    </div>
-                  </div>
+                    gag={gag}
+                    showPlus={i > 0}
+                    glare={gagModifiers.damageUp.active}
+                    onRemove={() => handleRemoveGag(i)}
+                  />
                 ))}
               </div>
     
               {/* Total damage */}
-              <div className="text-5xl font-impress text-neutral-900/50 whitespace-nowrap">
+              <div className="text-3xl xl:text-5xl font-impress text-neutral-900/50 whitespace-nowrap">
                 = {currentTotalDamage}
-              </div> 
-    
+              </div>
             </div>
           )}
-        </div>  
+
+          {/* NEW ROUND BUTTON - shown once a gag is selected, or while editing a round */}
+          {(selected.length > 0 || isEditing) && (
+          <button
+            onClick={handleNewRound}
+            className="
+              shrink-0
+              px-3 py-1.5 xl:px-5 xl:py-3
+              text-white text-base xl:text-xl font-bold font-minnie
+              rounded-xl xl:rounded-2xl
+              transition-all
+              shadow-[0_3px_0_rgba(0,0,0,0.9),0_7px_15px_rgba(0,0,0,0.45)]
+              hover:brightness-110
+              active:shadow-[0_1px_0_rgba(0,0,0,0.9)]
+              active:translate-y-[2px]
+            "
+            style={{
+              backgroundColor: "#00a2ffff",
+              textShadow: "2px 2px rgba(0,0,0,0.85)",
+            }}
+          >
+            NEW ROUND
+          </button>
+          )}
+        </div>
       </div>
-      <GagCalculator selected={selected} setSelected={setSelected} />
+      <GagCalculator
+        selected={selected}
+        setSelected={setSelected}
+        glare={gagModifiers.damageUp.active}
+        onHoverChange={setHoverPreview}
+        summary={
+          rounds.length > 0
+            ? <RoundHistory
+                rounds={displayRounds}
+                editingIndex={editingIndex}
+                currentDamage={currentTotalDamage}
+                overallDamage={overallDamage}
+                onSelectRound={handleSelectRound}
+                onRemoveRound={handleRemoveRound}
+                onResetRounds={handleResetRounds}
+              />
+            : selected.length > 0 && <DamageSummary breakdown={damageBreakdown} />
+        }
+      />
       <div className="mt-8 w-full text-center text-lg text-neutral-900 pt-3 font-impress">
         Inspired by master reggie, check out his version{" "}
         <a

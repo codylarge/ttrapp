@@ -1,273 +1,91 @@
 import { useState } from "react";
-
+import { GAG_TRACKS, GAGS, MAX_SELECTED, createSelectedGag } from "../data/gags";
+import TrackRow from "./TrackRow";
+import GagButton from "./GagButton";
+import GagPreview from "./GagPreview";
 
 /// GAG CALCULATOR COMPONENT
 // When a gag is selected it is added to the 'selected' array in the parent component which can make calculations with it.
 // Props: selected: array of selected gags
 //        setSelected: function to update selected gags
 //        panelClass: optional string for custom panel styling (menu background color)
-export default function GagCalculator({ selected, setSelected, panelClass = "bg-red-600 border-red-700" }) {
-  const gagTracks = [
-    { name: "trap", color: "#fffc57ff" },
-    { name: "lure", color: "#10b901ff" },
-    { name: "sound", color: "#416be7ff" },
-    { name: "throw", color: "#ffa33aff" },
-    { name: "squirt", color: "#ff4bccff" },
-    { name: "drop", color: "#3ef5ffff" },
-  ];
-  
+//        glare: optional boolean, shows a glare effect on gags (e.g. damage up active)
+//        summary: optional element shown in the right panel when no gag is hovered
+//        onHoverChange({ gag, organic } | null): optional, called when the hovered gag changes
+export default function GagCalculator({ selected, setSelected, panelClass = "bg-red-600 border-red-700", glare = false, summary = null, onHoverChange }) {
   const [hoveredGag, setHoveredGag] = useState(null);
   const [organicHovered, setOrganicHovered] = useState(false);
 
-  const gags = {
-    trap: [
-      { name: "banana-peel", track: "trap", damage: 12, accuracy: 0, affectAll: false, org: false },
-      { name: "rake", track: "trap", damage: 18, accuracy: 0, affectAll: false, org: false },
-      { name: "marbles", track: "trap", damage: 35, accuracy: 0, affectAll: false, org: false },
-      { name: "quicksand", track: "trap", damage: 50, accuracy: 0, affectAll: false, org: false },
-      { name: "trapdoor", track: "trap", damage: 85, accuracy: 0, affectAll: false, org: false },
-      { name: "tnt", track: "trap", damage: 180, accuracy: 0, affectAll: false, org: false },
-      { name: "railroad", track: "trap", damage: 200, accuracy: 0, affectAll: true, org: false }
-    ],
-  
-    lure: [
-      { name: "$1-bill", track: "lure", damage: 0, accuracy: 60, affectAll: false, org: false },
-      { name: "small-magnet", track: "lure", damage: 0, accuracy: 55, affectAll: true, org: false },
-      { name: "$5-bill", track: "lure", damage: 0, accuracy: 70, affectAll: false, org: false },
-      { name: "big-magnet", track: "lure", damage: 0, accuracy: 65, affectAll: true, org: false },
-      { name: "$10-bill", track: "lure", damage: 0, accuracy: 80, affectAll: false, org: false },
-      { name: "hypno-goggles", track: "lure", damage: 0, accuracy: 75, affectAll: true, org: false },
-      { name: "presentation", track: "lure", damage: 0, accuracy: 90, affectAll: true, org: false }
-    ],
-  
-    sound: [
-      { name: "bike-horn", track: "sound", damage: 4, accuracy: 95, affectAll: true, org: false },
-      { name: "whistle", track: "sound", damage: 7, accuracy: 95, affectAll: true, org: false },
-      { name: "bugle", track: "sound", damage: 11, accuracy: 95, affectAll: true, org: false },
-      { name: "aoogah", track: "sound", damage: 16, accuracy: 95, affectAll: true, org: false },
-      { name: "elephant-trunk", track: "sound", damage: 21, accuracy: 95, affectAll: true, org: false },
-      { name: "foghorn", track: "sound", damage: 50, accuracy: 95, affectAll: true, org: false },
-      { name: "opera-singer", track: "sound", damage: 90, accuracy: 95, affectAll: true, org: false }
-    ],
-  
-    throw: [
-      { name: "cupcake", track: "throw", damage: 6, accuracy: 75, affectAll: false, org: false },
-      { name: "fruit-pie-slice", track: "throw", damage: 10, accuracy: 75 , affectAll: false, org: false },
-      { name: "cream-pie-slice", track: "throw", damage: 17, accuracy: 75, affectAll: false, org: false },
-      { name: "whole-fruit-pie", track: "throw", damage: 27, accuracy: 75, affectAll: false, org: false },
-      { name: "whole-cream-pie", track: "throw", damage: 40, accuracy: 75, affectAll: false, org: false },
-      { name: "birthday-cake", track: "throw", damage: 100, accuracy: 75, affectAll: false, org: false },
-      { name: "wedding-cake", track: "throw", damage: 120, accuracy: 75, affectAll: true, org: false }
-    ],
-  
-    squirt: [
-      { name: "squirting-flower", track: "squirt", damage: 4, accuracy: 95, affectAll: false, org: false },
-      { name: "glass-of-water", track: "squirt", damage: 8, accuracy: 95, affectAll: false, org: false },
-      { name: "squirt-gun", track: "squirt", damage: 12, accuracy: 95, affectAll: false, org: false },
-      { name: "seltzer-bottle", track: "squirt", damage: 21, accuracy: 95, affectAll: false, org: false },
-      { name: "fire-hose", track: "squirt", damage: 30, accuracy: 95, affectAll: false, org: false },
-      { name: "storm-cloud", track: "squirt", damage: 80, accuracy: 95, affectAll: false, org: false },
-      { name: "geyser", track: "squirt", damage: 105, accuracy: 95, affectAll: true, org: false }
-    ],
-  
-    drop: [
-      { name: "flower-pot", track: "drop", damage: 10, accuracy: 50, affectAll: false, org: false },
-      { name: "sandbag", track: "drop", damage: 18, accuracy: 50, affectAll: false, org: false },
-      { name: "anvil", track: "drop", damage: 30, accuracy: 50, affectAll: false, org: false },
-      { name: "big-weight", track: "drop", damage: 45, accuracy: 50, affectAll: false, org: false },
-      { name: "safe", track: "drop", damage: 70, accuracy: 50, affectAll: false, org: false },
-      { name: "grand-piano", track: "drop", damage: 170, accuracy: 50, affectAll: false, org: false },
-      { name: "toontanic", track: "drop", damage: 180, accuracy: 50, affectAll: true, org: false }
-    ]
-  };
-  
-  function addGag(gag, org=false) {
-    if (selected.length >= 4) return; // MAX GAGS SHOWING AT ONCE
-    
-    if (org) {
-      gag.org = true;
-      if (gag.track === "lure") {
-        gag.accuracy += 10;
-      } else {
-        gag.damage = getOrgDamage(gag)
-      }
-    }
-
-    if (gag.track === "trap") {
-      setSelected(prev => {
-        // find how many traps are already at the front
-        const trapCount = prev.filter(g => g.track === "trap").length;
-    
-        // insert this trap right after existing traps
-        return [
-          ...prev.slice(0, trapCount),
-          {
-            track: gag.track,
-            name: gag.name,
-            damage: gag.damage,
-            accuracy: gag.accuracy,
-            org: gag.org,
-          },
-          ...prev.slice(trapCount),
-        ];
-      });
-      return;
-    }
-
-    setSelected(prev => [...prev, {
-      track: gag.track,
-      name: gag.name,
-      damage: gag.damage,
-      accuracy: gag.accuracy,
-      org: gag.org
-    }]);
-  }
-  
-  function getOrgDamage(gag) {
-    if (gag.track === "squirt" || gag.track === "drop") 
-      return  Math.ceil((gag.damage * 115) / 100);
-    else 
-      return  Math.ceil((gag.damage * 110) / 100);
+  // Update hover state and tell the parent (e.g. to preview damage on the cogs)
+  function updateHover(gag, organic) {
+    setHoveredGag(gag);
+    setOrganicHovered(organic);
+    onHoverChange?.(gag ? { gag, organic } : null);
   }
 
-  function getOrgAccuracy(gag) {
-    return gag.track === "lure" ? Math.min(gag.accuracy + 10, 95) : gag.accuracy
+  function addGag(gag, org = false) {
+    if (selected.length >= MAX_SELECTED) return;
+
+    const newGag = createSelectedGag(gag, org);
+
+    setSelected(prev => {
+      if (newGag.track !== "trap") return [...prev, newGag];
+
+      // Insert traps right after any existing traps so they stay at the front
+      const trapCount = prev.filter(g => g.track === "trap").length;
+      return [...prev.slice(0, trapCount), newGag, ...prev.slice(trapCount)];
+    });
   }
 
-
-  function convertGagName(name) {
-    return name
-      .replace(/-/g, ' ') // Replace hyphens with spaces
-      .replace(/\b\w/g, c => c.toUpperCase()); // Capitalize first letter of each word
-  }
-
-  function clear() {
-    setSelected([]);
-  }
 
   return (
     <div
       className={`w-[90%] max-w-6xl min-w-[850px]
-                  p-6 rounded-3xl shadow-xl border-4
+                  p-4 xl:p-6 rounded-3xl shadow-xl border-4
                   ${panelClass}`}
     >
-      {/* GAG LIST */}
-      <div className="flex gap-4">  
+      <div className="flex gap-3 xl:gap-4">
+        {/* GAG LIST */}
         <div className="flex-1">
-          {gagTracks.map((track) => (
-            <div key={track.name} className="flex items-center gap-1">
-              
-              {/* FULL ROW */}
-              <div
-                className="relative z-10 flex gap-2 rounded-xl w-full items-center"
-                style={{
-                  backgroundColor: track.color,
-                  height: "70px",
-                  boxShadow: `
-                    inset 0 1px 6px rgba(0, 0, 0, 0.8),  
-                    0 6px 10px rgba(0, 0, 0, .7)       
-                  `
-                }}
-              >
-                {/* TRACK LABEL */}
-                <div
-                  className="w-24 py-6 flex items-center justify-center text-neutral-950 text-xl font-bold rounded-3xl font-impress"
-                >
-                  {track.name.toUpperCase()}
-                </div>  
-              {/* GAG BUTTONS */}
-              {gags[track.name].map((gag, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => addGag(gag)}
-                  onMouseEnter={() =>
-                    setHoveredGag({
-                      track: gag.track,
-                      name: gag.name,
-                      damage: gag.damage,
-                      accuracy: gag.accuracy,
-                      gagObj: gag,
-                    })
-                  }
-                  onMouseLeave={() => {
-                    setHoveredGag(null);
-                    setOrganicHovered(false);
-                  }}
-                  className="relative px-5 py-1.5 rounded-2xl
-                  hover:brightness-125
-                  active:brightness-90 active:scale-95
-                  transition duration-150 ease-in-out"
-                  style={{
-                    backgroundColor: "#00a2ffff",
-                    boxShadow: `
-                      inset 0 0 2px rgb(0, 0, 0, .9),
-                      inset 0 0 5px rgba(0, 0, 0, 0.8),
-                      0 3px 2px #183269
-                    `,
-                  }}
-                >
-                  {/* ORGANIC OVERLAY */}
-                  {hoveredGag?.name === gag.name &&
-                    hoveredGag?.track === gag.track && (
-                      <div
-                        role="button"
-                        onClick={(e) => {
-                          e.stopPropagation(); // prevent normal gag click
-                          addGag(gag, true);
-                        }}
-                        onMouseEnter={() => setOrganicHovered(true)}
-                        onMouseLeave={() => setOrganicHovered(false)}
-                        className="absolute -top-3 -right-3 w-8 h-8 rounded-full shadow-lg cursor-pointer flex items-center justify-center transition"
-                      >
-                        <img
-                          src={
-                            organicHovered
-                              ? "/images/ui/organic-active.webp"
-                              : "/images/ui/organic-inactive.webp"
-                          }
-                          className="w-8 h-8 pointer-events-none"
-                        />
-                      </div>
-                    )}
-              
-                  {/* GAG IMAGE */}
-                  <img
-                    src={`/images/gags/${track.name}/${gag.name}.webp`}
-                    alt={gag.name}
-                    className="w-11 h-11 object-contain min-w-[24px] min-h-[24px]"
-                  />
-                </button>
+          {GAG_TRACKS.map(track => (
+            <TrackRow key={track.name} track={track}>
+              {GAGS[track.name].map(gag => (
+                <GagButton
+                  key={gag.name}
+                  gag={gag}
+                  isHovered={hoveredGag === gag}
+                  organicHovered={organicHovered}
+                  glare={glare}
+                  onAdd={addGag}
+                  onHover={hovered => updateHover(hovered, false)}
+                  onLeave={() => updateHover(null, false)}
+                  onOrganicHover={organic => updateHover(gag, organic)}
+                />
               ))}
-              </div>
-            </div>
+            </TrackRow>
           ))}
         </div>
 
-        {/* RIGHT PANEL */}  
-        <div className="w-80 bg-gray-100 rounded-xl p-4 flex flex-col justify-between inner-shadow">  
-        {/* HOVER PREVIEW */}
-          <div className="flex-1 flex flex-col items-center justify-center text-center">  
-              {hoveredGag && (
-              <div>
-                  <img
-                  src={`/images/gags/${hoveredGag.track.toLowerCase()}/${hoveredGag.name}.webp`}
-                  className="w-24 h-24 mx-auto"
-                  />
-                  <h2 className="font-bold text-xl mt-2">{convertGagName(hoveredGag.name)}</h2>
-                  <p className="mt-1 text-lg">Damage: {organicHovered ? getOrgDamage(hoveredGag) : hoveredGag.damage}</p>
-                  <p className="text-lg">Accuracy: {organicHovered ? getOrgAccuracy(hoveredGag) : hoveredGag.accuracy}%</p>
-              </div>
-              )}  
-          </div>  
+        {/* RIGHT PANEL - absolutely positioned so its content never changes the panel height,
+            the gag list alone sets it */}
+        <div className="w-60 xl:w-80 shrink-0 relative">
+        <div className="absolute inset-0 bg-gray-100 rounded-xl p-3 xl:p-4 flex flex-col justify-between inner-shadow">
+          {/* HOVER PREVIEW - replaces the summary while a gag is hovered */}
+          <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center">
+            {hoveredGag
+              ? <GagPreview gag={hoveredGag} organic={organicHovered} />
+              : summary}
+          </div>
+
           {/* CLEAR BUTTON */}
           <button
-            onClick={clear}
+            onClick={() => setSelected([])}
             className="
-              mt-4
-              py-8
+              mt-3 xl:mt-4
+              py-4 xl:py-8
 
               text-white
-              text-2xl
+              text-xl xl:text-2xl
               font-bold
               font-minnie
               rounded-2xl
@@ -284,8 +102,7 @@ export default function GagCalculator({ selected, setSelected, panelClass = "bg-
           >
             CLEAR
           </button>
-
-
+        </div>
         </div>
       </div>
     </div>
