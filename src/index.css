@@ -24,11 +24,297 @@
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: "Remington", sans-serif;
+  font-family: "Remington", sans-serif; /* not themed, only the font-remington class (cog levels) is */
+}
+
+/* THEMES
+   Every themeable colour, font and shadow is a variable. :root holds the classic (toony) look,
+   which every page uses by default. Put data-theme="tracker" on a wrapper to restyle everything inside it.
+   Tailwind classes like bg-th-panel / font-minnie read these (see tailwind.config.js).
+   Rule: themes only swap these values, never the layout. */
+:root,
+[data-theme="classic"] {
+  --font-minnie: "Minnie";
+  --font-impress: "Impress";
+  --font-remington: "Remington";
+
+  --th-page-bg: url("/images/backgrounds/background-blue-blur.jpg");
+  --th-title: #fde047;
+  --th-title-shadow: 0 5px 0 rgba(0,0,0,0.9), 0 10px 20px rgba(0,0,0,0.4);
+
+  --th-bar: #9ca3af;
+  --th-cell: #6b7280;
+  --th-cell-hit: #ef4444;
+  --th-cell-dead: #22c55e;
+  --th-cell-preview: #86efac;
+  --th-cell-border: #111827;
+  --th-cell-text: #111827;
+
+  --th-panel: #dc2626;
+  --th-panel-border: #b91c1c;
+  --th-surface: #f3f4f6;
+  --th-surface-text: #262626;
+  --th-surface-muted: #737373;
+  --th-divider: #a3a3a3;
+  --th-inset: inset 0 0 8px rgba(0,0,0,0.75);
+
+  --th-track-mix: 100%;          /* how much of the track colour fills a track row */
+  --th-track-base: #000;         /* what the track colour is mixed with */
+  --th-track-label-mix: 0%;      /* how much of the track colour tints the track label */
+  --th-track-label-base: #0a0a0a;
+  --th-track-label-shadow: none;
+  --th-track-shadow: inset 0 1px 6px rgba(0,0,0,0.8), 0 6px 10px rgba(0,0,0,.7);
+
+  --th-toggle: #6b7280;
+  --th-toggle-on: #4b5563;
+  --th-toggle-border: #374151;
+  --th-accent-top: #269ae1;      /* supervisor department panel */
+  --th-accent-bottom: #0575c2;
+  --th-accent-border: #0c5291;
+  --th-footer: #171717;
+}
+
+[data-theme="tracker"] {
+  --th-page-bg: linear-gradient(to bottom, #12405f, #0a2438);
+  --th-title: #ffffff;
+  --th-title-shadow: 0 4px 0 #0b2a40, 0 8px 16px rgba(0,0,0,0.35);
+
+  --th-bar: #c4e8f9;
+  --th-cell: #ee3b2c;            /* red dot: laff left */
+  --th-cell-hit: #ee3b2c;
+  --th-cell-dead: #34c24a;       /* green dot: dies */
+  --th-cell-preview: #9be6a4;
+  --th-cell-border: #1e4d6b;
+  --th-cell-text: #1e4d6b;       /* HP under each dot */
+
+  --th-panel: #b3e0f5;
+  --th-panel-border: #1e4d6b;
+  --th-surface: #f5fbff;
+  --th-surface-text: #1e4d6b;
+  --th-surface-muted: #4f7f9e;
+  --th-divider: #9cc9e2;
+  --th-inset: inset 0 0 0 3px #1e4d6b;
+
+  --th-track-mix: 100%;
+  --th-track-base: #000;
+  --th-track-label-mix: 0%;
+  --th-track-label-base: #ffffff;
+  --th-track-label-shadow: -1.5px -1.5px 0 #173a52, 1.5px -1.5px 0 #173a52, -1.5px 1.5px 0 #173a52, 1.5px 1.5px 0 #173a52;
+  --th-track-shadow: inset 0 0 0 3px rgba(0,0,0,0.18), 0 2px 0 rgba(0,0,0,0.15);
+
+  --th-toggle: #eaf7fd;
+  --th-toggle-on: #d3f5d6;
+  --th-toggle-border: #1e4d6b;
+  --th-accent-top: #3fb0e8;
+  --th-accent-bottom: #1786c9;
+  --th-accent-border: #1e4d6b;
+  --th-footer: #b9dcef;
+}
+
+/* Tracker panels: soft light blue gradient instead of a flat fill */
+[data-theme="tracker"] .bg-th-panel {
+  background-image: linear-gradient(to bottom, #d8f1fd, #9ad6f2);
+}
+
+/* Tracker buttons: bright blue with a pale outline, barely any ledge */
+[data-theme="tracker"] .toon-btn-blue {
+  --fill-top: #3cb4ec;
+  --fill-bottom: #1584c6;
+  --border-top: #bfe6f8;
+  --border-bottom: #8fcdec;
+  --ledge: rgba(30, 77, 107, 0.35);
+}
+
+/* Tracker cog levels: each level number becomes a glossy dot (red, green once defeated) with the HP below it.
+   The cell's state class (bg-th-cell-*) picks the dot colour instead of filling the whole cell. */
+[data-theme="tracker"] .cog-cell {
+  --dot: 13px; /* dot radius, small enough that dot + HP always fit inside the bar */
+  border: none;
+  background-color: transparent;
+  justify-content: flex-start;
+  padding-top: 3px; /* fixed spot for the dot, so the department ring below can line up with it */
+}
+[data-theme="tracker"] .cog-cell.bg-th-cell { --dot-color: var(--th-cell); }
+[data-theme="tracker"] .cog-cell.bg-th-cell-hit { --dot-color: var(--th-cell-hit); }
+[data-theme="tracker"] .cog-cell.bg-th-cell-dead { --dot-color: var(--th-cell-dead); }
+[data-theme="tracker"] .cog-cell.bg-th-cell-preview { --dot-color: var(--th-cell-preview); }
+@media (min-width: 1280px) {
+  [data-theme="tracker"] .cog-cell { --dot: 15px; }
+}
+[data-theme="tracker"] .cog-cell-level {
+  width: calc(var(--dot) * 2);
+  height: calc(var(--dot) * 2);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 2px; /* the font sits high in its line box */
+  border-radius: 9999px;
+  border: 1.5px solid #2a2a2a;
+  background-color: var(--dot-color);
+  background-image: radial-gradient(circle at 35% 28%, rgba(255,255,255,0.75), transparent 30%);
+  box-shadow: inset 0 -3px 5px rgba(0,0,0,0.3);
+  transition: background-color 150ms;
+  color: #fff;
+  text-shadow: 0 0 2px #000, 1px 1px 0 #000;
+}
+[data-theme="tracker"] .cog-cell-level + div {
+  margin-top: 2px; /* HP */
+}
+[data-theme="tracker"] .cog-cell-tint {
+  inset: 3px auto auto 50%;
+  width: calc(var(--dot) * 2);
+  height: calc(var(--dot) * 2);
+  transform: translateX(-50%);
+  border-radius: 9999px;
+}
+/* Named cogs (supervisors, field offices) get a wide rounded box instead of a dot so the name fits */
+[data-theme="tracker"] .cog-cell-named .cog-cell-level,
+[data-theme="tracker"] .cog-cell-named .cog-cell-tint {
+  width: calc(100% - 12px);
+  border-radius: 8px;
+}
+[data-theme="tracker"] .cog-cell-named .cog-cell-tint {
+  left: 6px;
+  transform: none;
+}
+[data-theme="tracker"] .cog-cell .shield-effect {
+  border-radius: 9999px;
+}
+
+.th-page {
+  background: var(--th-page-bg);
 }
 
 .inner-shadow {
-  box-shadow: inset 0px 0px 8px rgba(0,0,0,0.75);
+  box-shadow: var(--th-inset);
+}
+
+/* SKULL FINDER
+   skull-room: dark walls around the floor
+   skull-floor: the dark green floor the tiles sit on
+   skull-tile: unrevealed holographic red tile. --glow (0-1) sets brightness, far tiles glow more
+   skull-tile-open: revealed safe tile, the hologram switches off
+   skull-tile-hit: the skull that was stepped on
+   skull-button: the objective button, skull-button-pressed turns it green */
+@layer components {
+  .skull-room {
+    background: linear-gradient(to bottom, #2e2c22, #1c1b14);
+  }
+  .skull-floor {
+    background: linear-gradient(to bottom, #0f2410, #071407);
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.9);
+  }
+  .skull-tile {
+    position: relative;
+    background:
+      repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 4px),
+      linear-gradient(to bottom,
+        rgba(200, 25, 15, calc(0.35 + var(--glow) * 0.4)),
+        rgba(120, 10, 5, calc(0.25 + var(--glow) * 0.35)));
+    border: 1px solid rgba(255, 60, 40, calc(0.35 + var(--glow) * 0.5));
+    box-shadow:
+      inset 0 0 10px rgba(255, 50, 30, calc(var(--glow) * 0.45)),
+      0 0 6px rgba(255, 30, 10, calc(var(--glow) * 0.35));
+    animation: skull-flicker 4s ease-in-out infinite;
+  }
+  .skull-tile-open {
+    background: rgba(200, 25, 15, 0.08);
+    border: 1px solid rgba(255, 60, 40, 0.3);
+    text-shadow: 0 0 8px currentColor;
+  }
+  .skull-tile-hit {
+    background: radial-gradient(circle, rgba(255, 90, 60, 0.95), rgba(160, 10, 0, 0.9));
+    border: 1px solid #ff8a70;
+    box-shadow: 0 0 18px rgba(255, 60, 30, 0.9);
+  }
+  .skull-button {
+    background: radial-gradient(circle at 40% 35%, #ffffff, #ffd6d6 60%, #e8a0a0);
+    box-shadow: 0 0 14px rgba(255, 220, 220, 0.9), 0 3px 0 #9c5a5a;
+    transition: transform 100ms, background 200ms, box-shadow 200ms;
+  }
+  .skull-button-pressed {
+    background: radial-gradient(circle at 40% 35%, #d9ffd9, #4ade80 60%, #16a34a);
+    box-shadow: 0 0 20px rgba(74, 222, 128, 1), 0 1px 0 #0f5f2c;
+    transform: translateY(2px);
+  }
+}
+
+/* Gentle hologram shimmer on unrevealed tiles */
+@keyframes skull-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+/* TOON BUTTON - the shared button style
+   Usage: className="toon-btn toon-btn-blue rounded-xl px-3 py-2"
+   Add a colour class (blue / red / gold) and set size, padding and rounding with Tailwind as usual.
+   Deeper bottom ledge for big buttons: add "[--depth:3px]" */
+@layer components {
+  .toon-btn {
+    /* Transparent border lets the second gradient show through as a darker outline */
+    border: 2px solid transparent;
+    background:
+      linear-gradient(to bottom, var(--fill-top), var(--fill-bottom)) padding-box,
+      linear-gradient(to bottom, var(--border-top), var(--border-bottom)) border-box;
+    /* Solid ledge under the button that it presses down into */
+    box-shadow: 0 var(--depth, 2px) 0 var(--ledge);
+    transition: filter 100ms ease-out, transform 100ms ease-out, box-shadow 100ms ease-out;
+  }
+
+  .toon-btn:hover {
+    filter: brightness(1.1);
+  }
+
+  .toon-btn:active {
+    transform: translateY(calc(var(--depth, 2px) - 1px));
+    box-shadow: 0 1px 0 var(--ledge);
+  }
+
+  /* COLOURS */
+  .toon-btn-blue {
+    --fill-top: #33b5ff;
+    --fill-bottom: #008fe6;
+    --border-top: #1d8fd9;
+    --border-bottom: #0f66b0;
+    --ledge: #155a99;
+  }
+
+  .toon-btn-red {
+    --fill-top: #ff5c5c;
+    --fill-bottom: #e02828;
+    --border-top: #d93636;
+    --border-bottom: #a81e1e;
+    --ledge: #8f1b1b;
+  }
+
+  .toon-btn-gold {
+    --fill-top: #ffd44d;
+    --fill-bottom: #ffb300;
+    --border-top: #e6a700;
+    --border-bottom: #b88400;
+    --ledge: #946b00;
+  }
+  .toon-btn-dark {
+    --fill-top: #5a5643;
+    --fill-bottom: #3a372a;
+    --border-top: #6b6650;
+    --border-bottom: #2a2820;
+    --ledge: #15140f;
+  }
+  .toon-btn-cyan {
+    --fill-top: #3fe0ee;
+    --fill-bottom: #12bccf;
+    --border-top: #0fb0c4;
+    --border-bottom: #0a8a9c;
+    --ledge: #08707f;
+  }
+}
+
+/* Yellow text with a darker yellow drop shadow, like the in-game Back button */
+.back-btn-text {
+  text-shadow: 2px 2px 0 #b58a00;
+  letter-spacing: 0.03em;
 }
 
 /* SHIELD EFFECT - set --shield-rgb to a "r, g, b" color */

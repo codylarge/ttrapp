@@ -24,18 +24,12 @@ export default function GagButton({
       onClick={() => onAdd(gag, false)}
       onMouseEnter={() => onHover(gag)}
       onMouseLeave={onLeave}
-      className="relative flex-1 min-w-0 flex justify-center px-1 py-1 xl:py-1.5 rounded-xl xl:rounded-2xl
-      hover:brightness-125
-      active:brightness-90 active:scale-95
-      transition duration-150 ease-in-out"
-      style={{
-        backgroundColor: "#00a2ffff",
-        boxShadow: `
-          inset 0 0 2px rgb(0, 0, 0, .9),
-          inset 0 0 5px rgba(0, 0, 0, 0.8),
-          0 3px 2px #183269
-        `,
-      }}
+      className="
+        toon-btn toon-btn-blue
+        relative flex-1 min-w-0 flex justify-center
+        px-1 py-1
+        rounded-xl xl:rounded-2xl
+      "
     >
       {/* ORGANIC BADGE */}
       {isHovered && (
@@ -50,7 +44,7 @@ export default function GagButton({
           className="absolute -top-3 -right-3 w-8 h-8 rounded-full shadow-lg cursor-pointer flex items-center justify-center transition"
         >
           <img
-            src={organicHovered ? "/images/ui/organic-active.webp" : "/images/ui/organic-inactive.webp"}
+            src={organicHovered ? "/images/ui/organic-inactive.png" : "/images/ui/organic-active.png"}
             className="w-8 h-8 pointer-events-none"
           />
         </div>
@@ -60,7 +54,7 @@ export default function GagButton({
       <img
         src={getGagImage(gag)}
         alt={gag.name}
-        className="w-9 h-9 xl:w-11 xl:h-11 object-contain"
+        className="w-9 h-9 xl:w-11 xl:h-10 object-contain"
       />
       {glare && <span className="gag-glare" />}
     </button>

@@ -5,3 +5,37 @@
  e.g className="shadow-[0_6px_16px_rgba(0,0,0,0.35)]" 
 
 -- REACT --
+
+-- TOONTOWN RESOURCES --
+https://spikesrewrittenguide.com/
+
+-- GAMEPLAY NOTES --
+STATUS EFFECTS:
+Defense up(1 Star FO) = 10% Damage reduction
+Defense Down(Fringe President) = 20% / 40% / 60% defense reduction per cog missing
+
+
+STRATS:
+--- Perfect 3 star FO ---
+Round 1: Storms
+Round 2: Fogs/Opera
+All fired up rounds: 4 cake (TU Unite when needed)
+Cog Rounds: Use whatever strat just make sure all are dead at end and use baker
+All fired up rounds: 4 cake (TU Unite when needed)
+
+--- Bullion Strats ---
+BASIC:
+Round 1: Kill 11 with either: lure + org cake + cake OR org tnt + piano OR tnt + org piano also hit super with tnt
+Round 2: 1 storm 3 piano supervisor to Kill
+Round 3: Finish other cogs however 
+
+SOUND: Ensure 2 toons have saved 2 trunks and 1 Fogs
+Round 1: 2 trunk and 2 piano on 11?
+Round 2: 2 fog and 1 piano on each 12
+Round 3: Kill super (idk how)
+
+
+--- DA Strats ---
+2 Round (2 bessie 1 franz, 4 droppers(2 org drop MAX))
+Round 1: bessie, franz, 2 piano on super
+Round 2: bessie, 3 piano on super (or 4 piano on super if feeling lucky and want to save bessie)

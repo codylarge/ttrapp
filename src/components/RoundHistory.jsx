@@ -13,7 +13,7 @@ const MAX_ROUND_GAGS = 4; // A real round has at most 4 toons, so more gags than
 //        onResetRounds(): deletes every saved round
 export default function RoundHistory({ rounds, editingIndex, currentDamage, overallDamage, onSelectRound, onRemoveRound, onResetRounds }) {
   return (
-    <div className="w-full max-h-full flex flex-col text-left font-impress text-neutral-800">
+    <div className="w-full max-h-full flex flex-col text-left font-impress text-th-surface-text">
       <h2 className="font-bold text-lg xl:text-xl mb-1 xl:mb-2 text-center">Rounds</h2>
 
       {/* SAVED ROUNDS - two blue boxes per row, scrolls once it fills the panel */}
@@ -72,7 +72,7 @@ export default function RoundHistory({ rounds, editingIndex, currentDamage, over
 
             {/* TOP ROW - round number, tiny modifier icons, damage */}
             <div className="flex items-center gap-1 h-4 mb-1 text-xs leading-none">
-              <span className={`font-bold ${isInvalid ? "text-red-600" : "text-neutral-500"}`}>
+              <span className={`font-bold ${isInvalid ? "text-red-600" : "text-th-surface-muted"}`}>
                 {isInvalid && "⚠ "}#{i + 1}
               </span>
               <div className="flex gap-0.5 flex-1">
@@ -107,11 +107,8 @@ export default function RoundHistory({ rounds, editingIndex, currentDamage, over
           shrink-0
           w-full mt-2 py-0.5 xl:py-1
           text-white text-sm xl:text-base font-bold font-minnie
-          rounded-lg bg-red-600
-          transition-all
-          hover:brightness-110
-          shadow-[0_2px_0_rgba(0,0,0,0.9)]
-          active:shadow-none active:translate-y-[2px]
+          rounded-lg
+          toon-btn toon-btn-red
         "
         style={{ textShadow: "1px 1px rgba(0,0,0,0.85)" }}
       >
@@ -119,7 +116,7 @@ export default function RoundHistory({ rounds, editingIndex, currentDamage, over
       </button>
 
       {/* TOTALS */}
-      <div className="border-t-2 border-neutral-400 mt-2 xl:mt-3 pt-1 xl:pt-2 text-sm xl:text-lg">
+      <div className="border-t-2 border-th-divider mt-2 xl:mt-3 pt-1 xl:pt-2 text-sm xl:text-lg">
         <div className="flex justify-between">
           <span>{editingIndex !== null ? `Round #${editingIndex + 1} damage` : "Current round damage"}</span>
           <span>{currentDamage}</span>

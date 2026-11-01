@@ -10,7 +10,7 @@ export default function DamageSummary({ breakdown }) {
   const tracks = GAG_TRACKS.filter(track => track.name in trackDamage);
 
   return (
-    <div className="w-full text-sm xl:text-lg font-impress text-neutral-800">
+    <div className="w-full text-sm xl:text-lg font-impress text-th-surface-text">
       <h2 className="font-bold text-lg xl:text-xl mb-2 xl:mb-3">Damage Summary</h2>
 
       {tracks.map(track => (
@@ -20,7 +20,7 @@ export default function DamageSummary({ breakdown }) {
       <SummaryRow label="Group bonus" value={groupBonus} />
       {multiplier !== 1 && <SummaryRow label="Modifiers" value={`×${Number(multiplier.toFixed(2))}`} />}
 
-      <div className="border-t-2 border-neutral-400 mt-2 pt-2">
+      <div className="border-t-2 border-th-divider mt-2 pt-2">
         <SummaryRow label="Total damage" value={total} bold />
       </div>
     </div>
@@ -29,7 +29,7 @@ export default function DamageSummary({ breakdown }) {
 
 function SummaryRow({ label, value, color, bold = false }) {
   return (
-    <div className={`flex justify-between items-center ${bold ? "text-lg xl:text-2xl font-bold" : ""}`}>
+    <div className={`flex justify-between items-center ${bold ? "text-lg xl:text-2xl font-bold" : "text-th-surface-muted"}`}>
       <span className="flex items-center gap-2">
         {color && <span className="w-3 h-3 rounded-full border border-neutral-700" style={{ backgroundColor: color }} />}
         {label}

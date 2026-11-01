@@ -4,15 +4,45 @@ import SelectedGag from "../components/SelectedGag";
 import DamageSummary from "../components/DamageSummary";
 import RoundHistory from "../components/RoundHistory";
 import Toggle from "../components/Toggle";
+import CogLevelBar from "../components/CogLevelBar";
 import { MAX_SELECTED, createSelectedGag } from "../data/gags";
 
 // Modifier toggles in display order. type says which state object the key belongs to
 const MODIFIER_TOGGLES = [
-  { key: "damageUp", type: "gag", icon: "/images/ui/modifiers/damage-up.png" },
-  { key: "defenseUp", type: "gag", icon: "/images/ui/modifiers/defense-up-boiler.png" },
-  { key: "overpaidCoin", type: "cog", icon: "/images/ui/modifiers/overpaid.png" },
-  { key: "defenseDown", type: "gag", icon: "/images/ui/modifiers/defense-down.png" },
+  { key: "damageUp", type: "gag", icon: "/images/ui/modifiers/damage-up.png", name: "Damage Up", description: "Gags deal 50% more damage." },
+  { key: "defenseUp", type: "gag", icon: "/images/ui/modifiers/defense-up-boiler.png", name: "Defense Up", description: "Cogs take 10% less damage from gags." },
+  { key: "overpaidCoin", type: "cog", icon: "/images/ui/modifiers/overpaid.png", name: "Overpaid", description: "Cogs gain +200 HP." },
+  { key: "defenseDown", type: "gag", icon: "/images/ui/modifiers/defense-down.png", name: "Defense Down", description: "Cogs take 20% more damage from gags." },
 ];
+
+// Cog departments for the supervisor toggles. palette sets the toon-btn colour variables (see index.css)
+const DEPARTMENTS = [
+  {
+    id: "sellbot", label: "Sell",
+    palette: { "--fill-top": "#c47b98", "--fill-bottom": "#9e5c75", "--border-top": "#8a4d65", "--border-bottom": "#6e3a4f", "--ledge": "#5a2f40" },
+  },
+  {
+    id: "cashbot", label: "Cash",
+    palette: { "--fill-top": "#40a680", "--fill-bottom": "#287c5f", "--border-top": "#22694f", "--border-bottom": "#1a523d", "--ledge": "#144030" },
+  },
+  {
+    id: "lawbot", label: "Law",
+    palette: { "--fill-top": "#5d7bbd", "--fill-bottom": "#3f5a96", "--border-top": "#344b7e", "--border-bottom": "#283a63", "--ledge": "#1f2e4f" },
+  },
+  {
+    id: "bossbot", label: "Boss",
+    palette: { "--fill-top": "#9c4b20", "--fill-bottom": "#702f0c", "--border-top": "#5e270a", "--border-bottom": "#4a1f08", "--ledge": "#3a1806" },
+  },
+];
+
+// The theme the user last picked, or classic
+function loadTheme() {
+  try {
+    return localStorage.getItem("damageCalcTheme") === "tracker" ? "tracker" : "classic";
+  } catch {
+    return "classic";
+  }
+}
 
 export default function DamageCalculator() {
   const [selected, setSelected] = useState([]);
@@ -20,6 +50,14 @@ export default function DamageCalculator() {
   const [editingIndex, setEditingIndex] = useState(null); // Index of the round open in the calculator, or null for a new round
   const [hoverPreview, setHoverPreview] = useState(null); // { gag, organic } of the hovered gag, or null
   const [levelsMode, setLevelsMode] = useState("normal");
+  const [activeDepts, setActiveDepts] = useState(DEPARTMENTS.map(dept => dept.id)); // Departments shown in supervisors mode, all on by default
+  const [theme, setTheme] = useState(loadTheme); // "classic" or "tracker", see THEMES in index.css
+
+  function toggleTheme() {
+    const next = theme === "classic" ? "tracker" : "classic";
+    setTheme(next);
+    try { localStorage.setItem("damageCalcTheme", next); } catch { /* storage blocked, just don't remember it */ }
+  }
 
   const [cogModifiers, setCogModifiers] = useState({
     overpaidCoin: { active: false, effect: 200 }, // Bonus HP added to each cog
@@ -29,7 +67,7 @@ export default function DamageCalculator() {
   const [gagModifiers, setGagModifiers] = useState({
     damageUp: { active: false, effect: 1.5 },     // Gags deal +50% damage
     defenseDown: { active: false, effect: 1.2 },  // Gags deal +20% damage
-    defenseUp: { active: false, effect: 0.75 }    // Gags deal 75% damage
+    defenseUp: { active: false, effect: 0.9 }     // Cogs take 10% less damage, gags deal 90%
   });
 
   // Shield overlays shown on the cog levels bar, color is "r, g, b"
@@ -55,10 +93,10 @@ export default function DamageCalculator() {
 
   // Cog cell colour. Solid colours show real damage, lighter ones show the hover preview
   function getCogCellColor(health) {
-    if (overallDamage >= health) return "bg-green-500";                                       // Defeated
-    if (previewOverallDamage !== null && previewOverallDamage >= health) return "bg-green-300"; // Would be defeated
-    if (overallDamage > 0) return "bg-red-500";                                               // Damaged, survives
-    return "bg-gray-500";
+    if (overallDamage >= health) return "bg-th-cell-dead";                                       // Defeated
+    if (previewOverallDamage !== null && previewOverallDamage >= health) return "bg-th-cell-preview"; // Would be defeated
+    if (overallDamage > 0) return "bg-th-cell-hit";                                              // Damaged, survives
+    return "bg-th-cell";
   }
   
   const levelsNormal = [
@@ -85,15 +123,23 @@ export default function DamageCalculator() {
   ];
 
   const levelsSupers = [
-    { level: 1, displayLevel: "Scrap", health: 250, color: "#9e5c75"},
-    { level: 2, displayLevel: "Steel", health: 750, color: "#9e5c75" },
-    { level: 3, displayLevel: "Coin", health: 750, color: "#287c5f" },
-    { level: 4, displayLevel: "Bull", health: 1150, color: "#287c5f" },
-    { level: 5, displayLevel: "Junior", health: 1100, color: "#3F5A96" },
-    { level: 6, displayLevel: "Senior", health: 1500, color: "#3F5A96" },
-    { level: 7, displayLevel: "Fairway", health: 1200, color: "#702F0C"},
-    { level: 8, displayLevel: "Fringe", health: 1750, color: "#702F0C" },
+    { level: 1, displayLevel: "Scrap", health: 250, color: "#9e5c75", dept: "sellbot" },
+    { level: 2, displayLevel: "Steel", health: 750, color: "#9e5c75", dept: "sellbot" },
+    { level: 3, displayLevel: "Coin", health: 750, color: "#287c5f", dept: "cashbot" },
+    { level: 4, displayLevel: "Bull", health: 1150, color: "#287c5f", dept: "cashbot" },
+    { level: 5, displayLevel: "Junior", health: 1100, color: "#3F5A96", dept: "lawbot" },
+    { level: 6, displayLevel: "Senior", health: 1500, color: "#3F5A96", dept: "lawbot" },
+    { level: 7, displayLevel: "Fairway", health: 1200, color: "#702F0C", dept: "bossbot" },
+    { level: 8, displayLevel: "Fringe", health: 1750, color: "#702F0C", dept: "bossbot" },
   ];
+
+  // Supervisors from the departments that are toggled on
+  const visibleSupers = levelsSupers.filter(level => activeDepts.includes(level.dept));
+
+  // Turn a department on or off in supervisors mode
+  function toggleDept(id) {
+    setActiveDepts(prev => prev.includes(id) ? prev.filter(dept => dept !== id) : [...prev, id]);
+  }
 
   const levelsFieldOffice = [
 
@@ -106,14 +152,12 @@ export default function DamageCalculator() {
   const levelModes = [
     {
       id: "normal",
-      levels: levelsNormal,
       image: "/images/ui/modes/normal.webp",
     },
     {
       id: "supervisors",
-      levels: levelsSupers,
       image: "/images/ui/modes/supervisors.webp"
-    },    
+    },
   ];
 
   function applyGagModifiers(baseDamage) { 
@@ -142,10 +186,13 @@ export default function DamageCalculator() {
   }
 
 
-  
-  const levels =
-  levelModes.find(mode => mode.id === levelsMode)?.levels
-  ?? [];
+  // Shared props for every cog level bar, they all show the same damage and modifiers
+  const cogBarProps = {
+    getHealth: getCogHealth,
+    getCellColor: getCogCellColor,
+    damage: previewOverallDamage ?? overallDamage,
+    shieldEffects,
+  };
 
   const handleGagToggle = (key, value) => {
     setGagModifiers(prev => ({
@@ -376,107 +423,98 @@ export default function DamageCalculator() {
 
   return (
     <div
-      className="min-h-screen w-full flex flex-col items-center justify-center p-6"
-      style={{
-        backgroundImage: "url('/images/backgrounds/background-blue-blur.jpg')",
-      }}
+      data-theme={theme}
+      className="th-page min-h-screen w-full flex flex-col items-center justify-center p-6"
     >
+      {/* THEME SWITCH - top right, opposite the back button */}
+      <button
+        onClick={toggleTheme}
+        className="toon-btn toon-btn-blue fixed top-3 right-3 xl:top-4 xl:right-4 z-50 px-4 py-1 rounded-full text-white text-sm xl:text-base font-bold font-minnie"
+        style={{ textShadow: "1px 1px rgba(0,0,0,0.85)" }}
+      >
+        {theme === "classic" ? "Tracker style" : "Classic style"}
+      </button>
 
       <h1
         className="
-          text-5xl xl:text-7xl font-bold mb-4 text-yellow-300 py-6 xl:py-10 font-minnie
-          [text-shadow:0_5px_0_rgba(0,0,0,0.9),0_10px_20px_rgba(0,0,0,0.4)]
+          text-4xl xl:text-6xl font-bold mb-4 text-th-title py-4 xl:py-8 font-minnie
+          [text-shadow:var(--th-title-shadow)]
         "
       >
         Damage Calculator
       </h1>
       {/* MODIFIERS */ }
-      <div className="bg-gray-400 p-3 rounded-t-2xl -mb-3">
+      <div className="bg-th-bar p-3 rounded-t-2xl -mb-3">
         <div className="flex justify-center gap-4">
           {MODIFIER_TOGGLES.map(modifier => (
             <Toggle
               key={modifier.key}
               icon={modifier.icon}
+              name={modifier.name}
+              description={modifier.description}
               toggleKey={modifier.key}
               on={(modifier.type === "gag" ? gagModifiers : cogModifiers)[modifier.key].active}
               onToggle={modifier.type === "gag" ? handleGagToggle : handleCogToggle}
             />
           ))}
         </div>
-
       </div>
-      {/* COG LEVELS */ }
-      <div
-        className="
-          w-[90%] max-w-6xl min-w-[850px]
-          h-16 xl:h-20
-          bg-gray-400
-          p-2 xl:p-3
-          mb-4
-          rounded-2xl
-          shadow-[0_8px_8px_rgba(0,0,0,0.3)]
-          flex flex-col
-          gap-2
-        "
-      >
-        <div className="flex h-full items-center overflow-hidden">
-          {levels.map((entry, i) => {
-            const health = getCogHealth(entry.health);
-            return (
-            <div
-              key={i}
-              className={`
-                relative
-                flex-1
-                h-full
-                box-border
-                flex flex-col items-center justify-center
-                border-2 border-gray-900
-                text-gray-900
-                font-remington
-                ${getCogCellColor(health)}
-                transition-colors duration-150
-              `}
-            >
-              {entry.color && (
-                <div
-                  className={`
-                    pointer-events-none
-                    absolute inset-0
-                    border-2
-                  `}
-                  style={{
-                    borderStyle: "solid",
-                    borderColor: `${entry.color}`,
-                    backgroundColor: `${entry.color}22`,
-                  }}
-                />
-              )}
-              {/* SHIELD EFFECTS - each active shield is a ring further in so they all stay visible */}
-              {shieldEffects.map((shield, j) => (
-                <div
-                  key={shield.color}
-                  className="shield-effect z-10"
-                  style={{ "--shield-rgb": shield.color, inset: `${j * 4}px` }}
-                />
-              ))}
-              <div className="text-sm xl:text-lg font-bold leading-none">
-                {entry.displayLevel ?? entry.level}
-              </div>
-              {/* Remaining HP, includes the hover preview */}
-              <div className="text-xs xl:text-base leading-none mt-1 opacity-90">
-                {Math.max(health - (previewOverallDamage ?? overallDamage), 0)}
-              </div>
-            </div>
-            );
-          })}
-        </div>
-      </div>
+      {/* COG LEVELS - supervisors mode shows the chosen departments' supervisors above the normal 1-20 bar */}
+      {levelsMode === "supervisors" && visibleSupers.length > 0 && (
+        <CogLevelBar levels={visibleSupers} className="mb-2" {...cogBarProps} />
+      )}
+      <CogLevelBar levels={levelsNormal} className="mb-4" {...cogBarProps} />
 
-      {/* COG LEVEL MODES */ }
-      <div className="flex gap-4 justify-center mb-4">
+      {/* COG LEVEL MODES - once supervisors mode is on, its button turns into the department toggles */ }
+      <div className="flex gap-4 justify-center items-center mb-4">
         {levelModes.map(mode => {
           const isActive = levelsMode === mode.id;
+
+          // DEPARTMENT TOGGLES - pick which departments' supervisors to show
+          if (mode.id === "supervisors" && isActive) {
+            return (
+              <div
+                key={mode.id}
+                className="
+                  p-1 rounded-xl border-2 border-[var(--th-accent-border)]
+                  bg-gradient-to-b from-[var(--th-accent-top)] to-[var(--th-accent-bottom)]
+                "
+              >
+                <div className="h-[45px] xl:h-[60px] flex items-center gap-1.5 xl:gap-2 px-1">
+                  {DEPARTMENTS.map(dept => {
+                    const isOn = activeDepts.includes(dept.id);
+                    return (
+                      <button
+                        key={dept.id}
+                        onClick={() => toggleDept(dept.id)}
+                        aria-pressed={isOn}
+                        className={`
+                          toon-btn
+                          flex items-center gap-1.5
+                          pl-1.5 pr-2.5 py-1 xl:py-1.5
+                          rounded-lg
+                          text-white text-sm xl:text-base font-bold font-minnie
+                          ${isOn ? "" : "grayscale opacity-60"}
+                        `}
+                        style={{ ...dept.palette, textShadow: "1px 1px rgba(0,0,0,0.85)" }}
+                      >
+                        {/* CHECKBOX - ticked while the department is shown */}
+                        <span className="w-4 h-4 xl:w-5 xl:h-5 shrink-0 rounded bg-white border-2 border-black/40 flex items-center justify-center">
+                          {isOn && (
+                            <svg viewBox="0 0 16 16" className="w-3 h-3 xl:w-3.5 xl:h-3.5" fill="none" stroke="var(--border-bottom)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M3 8.5l3.5 3.5L13 4.5" />
+                            </svg>
+                          )}
+                        </span>
+                        {dept.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          }
+
           return (
             <button
               key={mode.id}
@@ -514,9 +552,9 @@ export default function DamageCalculator() {
 
 
       {/* RESULTS BAR */ }
-      <div className="w-[90%] max-w-6xl min-w-[850px] bg-red-600 pt-4 xl:pt-6 px-3 pb-1 rounded-3xl shadow-2xl border-4 border-red-700">
+      <div className="w-[90%] max-w-6xl min-w-[850px] bg-th-panel pt-4 xl:pt-6 px-3 pb-1 rounded-3xl shadow-2xl border-4 border-th-panel-border">
 
-        <div className="bg-gray-100 rounded-xl mb-4 xl:mb-6 px-3 xl:px-4 flex items-center justify-between gap-4 h-16 xl:h-20 overflow-hidden text-center text-gray-700 inner-shadow">
+        <div className="bg-th-surface rounded-xl mb-4 xl:mb-6 px-3 xl:px-4 flex items-center justify-between gap-4 h-16 xl:h-20 overflow-hidden text-center text-th-surface-muted inner-shadow">
           {selected.length === 0 && (
             <p className="text-xl xl:text-2xl flex-1 font-impress">
               No gags selected
@@ -539,7 +577,7 @@ export default function DamageCalculator() {
               </div>
     
               {/* Total damage */}
-              <div className="text-3xl xl:text-5xl font-impress text-neutral-900/50 whitespace-nowrap">
+              <div className="text-3xl xl:text-5xl font-impress text-th-surface-muted whitespace-nowrap">
                 = {currentTotalDamage}
               </div>
             </div>
@@ -554,16 +592,9 @@ export default function DamageCalculator() {
               px-3 py-1.5 xl:px-5 xl:py-3
               text-white text-base xl:text-xl font-bold font-minnie
               rounded-xl xl:rounded-2xl
-              transition-all
-              shadow-[0_3px_0_rgba(0,0,0,0.9),0_7px_15px_rgba(0,0,0,0.45)]
-              hover:brightness-110
-              active:shadow-[0_1px_0_rgba(0,0,0,0.9)]
-              active:translate-y-[2px]
+              toon-btn toon-btn-blue [--depth:3px]
             "
-            style={{
-              backgroundColor: "#00a2ffff",
-              textShadow: "2px 2px rgba(0,0,0,0.85)",
-            }}
+            style={{ textShadow: "2px 2px rgba(0,0,0,0.85)" }}
           >
             NEW ROUND
           </button>
@@ -575,7 +606,7 @@ export default function DamageCalculator() {
         setSelected={setSelected}
         glare={gagModifiers.damageUp.active}
         onHoverChange={setHoverPreview}
-        summary={
+        summary={ // 3 Options: Saved rounds, No saved rounds but gags selected, No rounds no gags
           rounds.length > 0
             ? <RoundHistory
                 rounds={displayRounds}
@@ -589,13 +620,13 @@ export default function DamageCalculator() {
             : selected.length > 0 && <DamageSummary breakdown={damageBreakdown} />
         }
       />
-      <div className="mt-8 w-full text-center text-lg text-neutral-900 pt-3 font-impress">
+      <div className="mt-8 w-full text-center text-lg text-th-footer pt-3 font-impress">
         Inspired by master reggie, check out his version{" "}
         <a
           href="https://big.brain.town/"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-black hover:text-blue-300 underline transition"
+          className="text-th-footer hover:text-blue-300 underline transition"
         >
           here
         </a>

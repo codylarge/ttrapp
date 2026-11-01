@@ -12,7 +12,7 @@ import GagPreview from "./GagPreview";
 //        glare: optional boolean, shows a glare effect on gags (e.g. damage up active)
 //        summary: optional element shown in the right panel when no gag is hovered
 //        onHoverChange({ gag, organic } | null): optional, called when the hovered gag changes
-export default function GagCalculator({ selected, setSelected, panelClass = "bg-red-600 border-red-700", glare = false, summary = null, onHoverChange }) {
+export default function GagCalculator({ selected, setSelected, panelClass = "bg-th-panel border-th-panel-border", glare = false, summary = null, onHoverChange }) {
   const [hoveredGag, setHoveredGag] = useState(null);
   const [organicHovered, setOrganicHovered] = useState(false);
 
@@ -69,7 +69,7 @@ export default function GagCalculator({ selected, setSelected, panelClass = "bg-
         {/* RIGHT PANEL - absolutely positioned so its content never changes the panel height,
             the gag list alone sets it */}
         <div className="w-60 xl:w-80 shrink-0 relative">
-        <div className="absolute inset-0 bg-gray-100 rounded-xl p-3 xl:p-4 flex flex-col justify-between inner-shadow">
+        <div className="absolute inset-0 bg-th-surface text-th-surface-text rounded-xl p-3 xl:p-4 flex flex-col justify-between inner-shadow">
           {/* HOVER PREVIEW - replaces the summary while a gag is hovered */}
           <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center">
             {hoveredGag
@@ -90,15 +90,9 @@ export default function GagCalculator({ selected, setSelected, panelClass = "bg-
               font-minnie
               rounded-2xl
 
-              transition-all
-              shadow-[0_3px_0_rgba(0,0,0,0.9),0_7px_15px_rgba(0,0,0,0.45)]
-              active:shadow-[0_1px_0_rgba(0,0,0,0.9)]
-              active:translate-y-[2px]
+              toon-btn toon-btn-blue [--depth:3px]
             "
-            style={{
-              backgroundColor: "#00a2ffff",
-              textShadow: '2px 2px rgba(0,0,0,0.85)',
-            }}
+            style={{ textShadow: '2px 2px rgba(0,0,0,0.85)' }}
           >
             CLEAR
           </button>
