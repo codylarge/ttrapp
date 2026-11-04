@@ -8,11 +8,32 @@ import CogLevelBar from "../components/CogLevelBar";
 import { MAX_SELECTED, createSelectedGag } from "../data/gags";
 
 // Modifier toggles in display order. type says which state object the key belongs to
+// options: optional types the user picks from in the type menu (effect replaces the modifier's effect)
+//          the starting type is set in the cogModifiers / gagModifiers state below
 const MODIFIER_TOGGLES = [
-  { key: "damageUp", type: "gag", icon: "/images/ui/modifiers/damage-up.png", name: "Damage Up", description: "Gags deal 50% more damage." },
+  {
+    key: "damageUp", type: "gag", icon: "/images/ui/modifiers/damage-up.png", name: "Damage Up",
+    options: [
+      { id: "coin", value: "+25%", label: "Coin", effect: 1.25, description: "Gags deal 25% more damage." },
+      { id: "bull", value: "+50%", label: "Bull", effect: 1.5, description: "Gags deal 50% more damage." },
+    ],
+  },
   { key: "defenseUp", type: "gag", icon: "/images/ui/modifiers/defense-up-boiler.png", name: "Defense Up", description: "Cogs take 10% less damage from gags." },
-  { key: "overpaidCoin", type: "cog", icon: "/images/ui/modifiers/overpaid.png", name: "Overpaid", description: "Cogs gain +200 HP." },
-  { key: "defenseDown", type: "gag", icon: "/images/ui/modifiers/defense-down.png", name: "Defense Down", description: "Cogs take 20% more damage from gags." },
+  {
+    key: "overpaid", type: "cog", icon: "/images/ui/modifiers/overpaid.png", name: "Overpaid",
+    options: [
+      { id: "coin", value: "+150 HP", label: "Coin", effect: 150, description: "Cogs gain +150 HP. Supervisors are unaffected." },
+      { id: "bull", value: "+200 HP", label: "Bull", effect: 200, description: "Cogs gain +200 HP. Supervisors are unaffected." },
+    ],
+  },
+  {
+    key: "defenseDown", type: "gag", icon: "/images/ui/modifiers/defense-down.png", name: "Defense Down",
+    options: [
+      { id: "1", value: "-20%", label: "Level 1", effect: 1.2, description: "Cogs take 20% more damage from gags." },
+      { id: "2", value: "-40%", label: "Level 2", effect: 1.4, description: "Cogs take 40% more damage from gags." },
+      { id: "3", value: "-60%", label: "Level 3", effect: 1.6, description: "Cogs take 60% more damage from gags." },
+    ],
+  },
 ];
 
 // Cog departments for the supervisor toggles. palette sets the toon-btn colour variables (see index.css)
@@ -59,20 +80,21 @@ export default function DamageCalculator() {
     try { localStorage.setItem("damageCalcTheme", next); } catch { /* storage blocked, just don't remember it */ }
   }
 
+  // option: the picked type for modifiers that have options (see MODIFIER_TOGGLES), effect follows it
   const [cogModifiers, setCogModifiers] = useState({
-    overpaidCoin: { active: false, effect: 200 }, // Bonus HP added to each cog
-    overpaidBull: { active: false, effect: 200 }
+    overpaid: { active: false, effect: 200, option: "bull" } // Bonus HP added to each cog
   });
 
   const [gagModifiers, setGagModifiers] = useState({
-    damageUp: { active: false, effect: 1.5 },     // Gags deal +50% damage
-    defenseDown: { active: false, effect: 1.2 },  // Gags deal +20% damage
-    defenseUp: { active: false, effect: 0.9 }     // Cogs take 10% less damage, gags deal 90%
+    damageUp: { active: false, effect: 1.5, option: "bull" }, // Gags deal +50% damage
+    defenseDown: { active: false, effect: 1.2, option: "1" }, // Gags deal +20/40/60% damage
+    defenseUp: { active: false, effect: 0.9 }                 // Cogs take 10% less damage, gags deal 90%
   });
 
   // Shield overlays shown on the cog levels bar, color is "r, g, b"
+  // cogOnly: the shield comes from a cog modifier, so supervisors (which it skips) don't show it
   const shieldEffects = [
-    { active: cogModifiers.overpaidCoin.active, color: "34, 197, 94" },
+    { active: cogModifiers.overpaid.active, color: "34, 197, 94", cogOnly: true },
     { active: gagModifiers.defenseUp.active, color: "0, 205, 255"},    
     { active: gagModifiers.defenseDown.active, color: "239, 68, 68" }, 
   ].filter(shield => shield.active);
@@ -137,8 +159,17 @@ export default function DamageCalculator() {
   const visibleSupers = levelsSupers.filter(level => activeDepts.includes(level.dept));
 
   // Turn a department on or off in supervisors mode
+  // Show / hide a department's supervisors
+  // Hiding the last one goes back to default mode, with every department ready for next time
   function toggleDept(id) {
-    setActiveDepts(prev => prev.includes(id) ? prev.filter(dept => dept !== id) : [...prev, id]);
+    const next = activeDepts.includes(id) ? activeDepts.filter(dept => dept !== id) : [...activeDepts, id];
+
+    if (next.length === 0) {
+      setLevelsMode("normal");
+      setActiveDepts(DEPARTMENTS.map(dept => dept.id));
+      return;
+    }
+    setActiveDepts(next);
   }
 
   const levelsFieldOffice = [
@@ -194,6 +225,15 @@ export default function DamageCalculator() {
     shieldEffects,
   };
 
+  // Supervisor bar: cog levels 9-16 then the shown supervisors
+  // Cog modifiers (overpaid) only affect the regular cogs, so their health and shields are baked in here
+  const levelsSupersBar = [
+    ...levelsNormal
+      .filter(entry => entry.level >= 9 && entry.level <= 16)
+      .map(entry => ({ ...entry, health: getCogHealth(entry.health) })),
+    ...visibleSupers.map(entry => ({ ...entry, shieldEffects: shieldEffects.filter(shield => !shield.cogOnly) })),
+  ];
+
   const handleGagToggle = (key, value) => {
     setGagModifiers(prev => ({
       ...prev,
@@ -213,6 +253,18 @@ export default function DamageCalculator() {
       },
     }));
   };
+
+  // Switch a modifier to another of its options (e.g. Overpaid Coin -> Bull)
+  function handleOptionSelect(key, optionId) {
+    const toggle = MODIFIER_TOGGLES.find(modifier => modifier.key === key);
+    const option = toggle.options.find(o => o.id === optionId);
+    const setModifiers = toggle.type === "gag" ? setGagModifiers : setCogModifiers;
+
+    setModifiers(prev => ({
+      ...prev,
+      [key]: { ...prev[key], option: option.id, effect: option.effect },
+    }));
+  }
 
   // The damage functions below take a list of gags, so they can calculate the
   // real selection or a preview (selection + hovered gag)
@@ -317,12 +369,15 @@ export default function DamageCalculator() {
     );
   };
 
-  // Modifier toggles that are currently on
+  // Modifier toggles that are currently on, with the picked option and effect (so a round can restore them)
   function getActiveModifiers() {
-    return MODIFIER_TOGGLES.filter(modifier => {
-      const modifiers = modifier.type === "gag" ? gagModifiers : cogModifiers;
-      return modifiers[modifier.key].active;
-    });
+    return MODIFIER_TOGGLES
+      .map(modifier => {
+        const state = (modifier.type === "gag" ? gagModifiers : cogModifiers)[modifier.key];
+        const option = modifier.options?.find(o => o.id === state.option);
+        return { ...modifier, active: state.active, option: state.option, effect: state.effect, optionLabel: option?.label };
+      })
+      .filter(modifier => modifier.active);
   }
 
   // The calculator's current gags and modifiers as a round
@@ -332,9 +387,13 @@ export default function DamageCalculator() {
 
   // Put a saved round's gags and modifiers back into the calculator
   function loadRound(round) {
-    const activeKeys = new Set(round.modifiers.map(modifier => modifier.key));
+    const saved = new Map(round.modifiers.map(modifier => [modifier.key, modifier]));
     const setActive = prev => Object.fromEntries(
-      Object.entries(prev).map(([key, modifier]) => [key, { ...modifier, active: activeKeys.has(key) }])
+      Object.entries(prev).map(([key, modifier]) => {
+        const savedModifier = saved.get(key);
+        if (!savedModifier) return [key, { ...modifier, active: false }];
+        return [key, { ...modifier, active: true, effect: savedModifier.effect, option: savedModifier.option }];
+      })
     );
 
     setSelected(round.gags);
@@ -424,7 +483,7 @@ export default function DamageCalculator() {
   return (
     <div
       data-theme={theme}
-      className="th-page min-h-screen w-full flex flex-col items-center justify-center p-6"
+      className="th-page min-h-screen w-full flex flex-col items-center justify-start p-6" // top-aligned so the supervisor bar doesn't shift everything up
     >
       {/* THEME SWITCH - top right, opposite the back button */}
       <button
@@ -452,6 +511,9 @@ export default function DamageCalculator() {
               icon={modifier.icon}
               name={modifier.name}
               description={modifier.description}
+              options={modifier.options}
+              selectedOption={(modifier.type === "gag" ? gagModifiers : cogModifiers)[modifier.key].option}
+              onSelectOption={handleOptionSelect}
               toggleKey={modifier.key}
               on={(modifier.type === "gag" ? gagModifiers : cogModifiers)[modifier.key].active}
               onToggle={modifier.type === "gag" ? handleGagToggle : handleCogToggle}
@@ -459,61 +521,60 @@ export default function DamageCalculator() {
           ))}
         </div>
       </div>
-      {/* COG LEVELS - supervisors mode shows the chosen departments' supervisors above the normal 1-20 bar */}
-      {levelsMode === "supervisors" && visibleSupers.length > 0 && (
-        <CogLevelBar levels={visibleSupers} className="mb-2" {...cogBarProps} />
-      )}
-      <CogLevelBar levels={levelsNormal} className="mb-4" {...cogBarProps} />
+      {/* COG LEVELS - supervisors mode swaps the normal 1-20 bar for the supervisor bar */}
+      {levelsMode === "supervisors" && (
+        <>
+          <CogLevelBar
+            levels={levelsSupersBar}
+            className="slide-in"
+            {...cogBarProps}
+            getHealth={health => health} // Already applied per entry in levelsSupersBar
+          />
 
-      {/* COG LEVEL MODES - once supervisors mode is on, its button turns into the department toggles */ }
+          {/* DEPARTMENT TAB - hangs under the middle of the supervisor bar, click a department to show / hide it */}
+          <div className="slide-in bg-th-bar rounded-b-xl px-2 pb-1.5 flex gap-1.5 mb-4">
+            {DEPARTMENTS.map(dept => {
+              const isOn = activeDepts.includes(dept.id);
+              return (
+                <button
+                  key={dept.id}
+                  onClick={() => toggleDept(dept.id)}
+                  aria-pressed={isOn}
+                  title={isOn ? `Hide ${dept.label} supervisors` : `Show ${dept.label} supervisors`}
+                  className={`
+                    toon-btn
+                    flex items-center gap-1
+                    pl-1 pr-2 py-0.5
+                    rounded-md
+                    text-white text-xs xl:text-sm font-bold font-minnie
+                    ${isOn ? "" : "grayscale opacity-60"}
+                  `}
+                  style={{ ...dept.palette, textShadow: "1px 1px rgba(0,0,0,0.85)" }}
+                >
+                  {/* CHECKBOX - ticked while the department is shown */}
+                  <span className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0 rounded-sm bg-white border border-black/40 flex items-center justify-center">
+                    {isOn && (
+                      <svg viewBox="0 0 16 16" className="w-2.5 h-2.5 xl:w-3 xl:h-3" fill="none" stroke="var(--border-bottom)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 8.5l3.5 3.5L13 4.5" />
+                      </svg>
+                    )}
+                  </span>
+                  {dept.label}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+      {/* Normal 1-20 bar, default mode only */}
+      {levelsMode === "normal" && (
+        <CogLevelBar levels={levelsNormal} className="mb-4" {...cogBarProps} />
+      )}
+
+      {/* COG LEVEL MODES */ }
       <div className="flex gap-4 justify-center items-center mb-4">
         {levelModes.map(mode => {
           const isActive = levelsMode === mode.id;
-
-          // DEPARTMENT TOGGLES - pick which departments' supervisors to show
-          if (mode.id === "supervisors" && isActive) {
-            return (
-              <div
-                key={mode.id}
-                className="
-                  p-1 rounded-xl border-2 border-[var(--th-accent-border)]
-                  bg-gradient-to-b from-[var(--th-accent-top)] to-[var(--th-accent-bottom)]
-                "
-              >
-                <div className="h-[45px] xl:h-[60px] flex items-center gap-1.5 xl:gap-2 px-1">
-                  {DEPARTMENTS.map(dept => {
-                    const isOn = activeDepts.includes(dept.id);
-                    return (
-                      <button
-                        key={dept.id}
-                        onClick={() => toggleDept(dept.id)}
-                        aria-pressed={isOn}
-                        className={`
-                          toon-btn
-                          flex items-center gap-1.5
-                          pl-1.5 pr-2.5 py-1 xl:py-1.5
-                          rounded-lg
-                          text-white text-sm xl:text-base font-bold font-minnie
-                          ${isOn ? "" : "grayscale opacity-60"}
-                        `}
-                        style={{ ...dept.palette, textShadow: "1px 1px rgba(0,0,0,0.85)" }}
-                      >
-                        {/* CHECKBOX - ticked while the department is shown */}
-                        <span className="w-4 h-4 xl:w-5 xl:h-5 shrink-0 rounded bg-white border-2 border-black/40 flex items-center justify-center">
-                          {isOn && (
-                            <svg viewBox="0 0 16 16" className="w-3 h-3 xl:w-3.5 xl:h-3.5" fill="none" stroke="var(--border-bottom)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M3 8.5l3.5 3.5L13 4.5" />
-                            </svg>
-                          )}
-                        </span>
-                        {dept.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          }
 
           return (
             <button

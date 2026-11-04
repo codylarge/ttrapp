@@ -98,6 +98,19 @@ export function createSelectedGag(gag, org = false) {
   };
 }
 
+// An SOS card's attack as a selected gag: uses that gag's track and image but the SOS damage
+// SOS attacks always hit, so accuracy is 100
+export function createSosGag(card) {
+  return {
+    track: card.track,
+    name: card.gag,
+    damage: card.damage,
+    accuracy: 100,
+    org: false,
+    sos: card.name,
+  };
+}
+
 export function getGagImage(gag) {
   return `/images/gags/${gag.track}/${gag.name}.webp`;
 }

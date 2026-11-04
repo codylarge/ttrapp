@@ -14,6 +14,9 @@ STATUS EFFECTS:
 Defense up(1 Star FO) = 10% Damage reduction
 Defense Down(Fringe President) = 20% / 40% / 60% defense reduction per cog missing
 
+FIELD OFFICE:
+4 star:
+
 
 STRATS:
 --- Perfect 3 star FO ---
@@ -32,10 +35,10 @@ Round 3: Finish other cogs however
 SOUND: Ensure 2 toons have saved 2 trunks and 1 Fogs
 Round 1: 2 trunk and 2 piano on 11?
 Round 2: 2 fog and 1 piano on each 12
-Round 3: Kill super (idk how)
+Round 3: Kill super storm + 3 piano
 
 
 --- DA Strats ---
-2 Round (2 bessie 1 franz, 4 droppers(2 org drop MAX))
+2 Round Senior(2 bessie 1 franz, 4 droppers(2 org drop MAX))
 Round 1: bessie, franz, 2 piano on super
 Round 2: bessie, 3 piano on super (or 4 piano on super if feeling lucky and want to save bessie)

@@ -77,7 +77,7 @@ export default function RoundHistory({ rounds, editingIndex, currentDamage, over
               </span>
               <div className="flex gap-0.5 flex-1">
                 {round.modifiers.map(modifier => (
-                  <img key={modifier.key} src={modifier.icon} alt={modifier.key} className="w-3.5 h-3.5" />
+                  <img key={modifier.key} src={modifier.icon} alt={modifier.key} title={modifier.optionLabel ? `${modifier.name}: ${modifier.optionLabel}` : modifier.name} className="w-3.5 h-3.5" />
                 ))}
               </div>
               <span className={`font-bold text-sm ${isInvalid ? "text-red-600" : ""}`}>{round.total}</span>
@@ -89,7 +89,7 @@ export default function RoundHistory({ rounds, editingIndex, currentDamage, over
                 <div
                   key={j}
                   className="aspect-square rounded p-0.5"
-                  style={{ backgroundColor: gag.org ? "#FFBB00" : "#00a2ffff" }}
+                  style={{ backgroundColor: gag.sos ? "#7fe3e8" : gag.org ? "#FFBB00" : "#00a2ffff" }}
                 >
                   <img src={getGagImage(gag)} alt={gag.name} className="w-full h-full object-contain" />
                 </div>

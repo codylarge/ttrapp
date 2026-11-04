@@ -127,8 +127,13 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Tracker cog levels: each level number becomes a glossy dot (red, green once defeated) with the HP below it.
    The cell's state class (bg-th-cell-*) picks the dot colour instead of filling the whole cell. */
+/* Same bar height as classic, just less vertical padding so the big dots + HP fit */
+[data-theme="tracker"] .cog-bar { padding-top: 6px; padding-bottom: 6px; }
+@media (min-width: 1280px) {
+  [data-theme="tracker"] .cog-bar { padding-top: 8px; padding-bottom: 8px; }
+}
 [data-theme="tracker"] .cog-cell {
-  --dot: 13px; /* dot radius, small enough that dot + HP always fit inside the bar */
+  --dot: 15px; /* dot radius */
   border: none;
   background-color: transparent;
   justify-content: flex-start;
@@ -139,7 +144,7 @@ h1, h2, h3, h4, h5, h6 {
 [data-theme="tracker"] .cog-cell.bg-th-cell-dead { --dot-color: var(--th-cell-dead); }
 [data-theme="tracker"] .cog-cell.bg-th-cell-preview { --dot-color: var(--th-cell-preview); }
 @media (min-width: 1280px) {
-  [data-theme="tracker"] .cog-cell { --dot: 15px; }
+  [data-theme="tracker"] .cog-cell { --dot: 18px; }
 }
 [data-theme="tracker"] .cog-cell-level {
   width: calc(var(--dot) * 2);
@@ -157,6 +162,7 @@ h1, h2, h3, h4, h5, h6 {
   transition: background-color 150ms;
   color: #fff;
   text-shadow: 0 0 2px #000, 1px 1px 0 #000;
+  font-size: calc(var(--dot) * 0.95);
 }
 [data-theme="tracker"] .cog-cell-level + div {
   margin-top: 2px; /* HP */
@@ -178,12 +184,28 @@ h1, h2, h3, h4, h5, h6 {
   left: 6px;
   transform: none;
 }
+/* Modifier ring sits just inside the dot's dark outline instead of around the whole cell */
 [data-theme="tracker"] .cog-cell .shield-effect {
+  inset: 4.5px auto auto 50%; /* 3px cell padding + 1.5px dot outline */
+  width: calc(var(--dot) * 2 - 3px);
+  height: calc(var(--dot) * 2 - 3px);
+  transform: translateX(-50%);
   border-radius: 9999px;
+}
+[data-theme="tracker"] .cog-cell-named .shield-effect {
+  left: 7.5px;
+  width: calc(100% - 15px);
+  transform: none;
+  border-radius: 6.5px;
 }
 
 .th-page {
   background: var(--th-page-bg);
+  /* One copy that fills the window and stays put while scrolling, instead of tiling down the page */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 .inner-shadow {
@@ -295,6 +317,13 @@ h1, h2, h3, h4, h5, h6 {
     --border-bottom: #b88400;
     --ledge: #946b00;
   }
+  .toon-btn-sos {
+    --fill-top: #b5f4f4;
+    --fill-bottom: #6fdbe0;
+    --border-top: #4cc4cb;
+    --border-bottom: #2c9ea6;
+    --ledge: #1f7a82;
+  }
   .toon-btn-dark {
     --fill-top: #5a5643;
     --fill-bottom: #3a372a;
@@ -311,20 +340,67 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* TOON TILE - the big puffy, slightly crooked squares on the home page, like Toontown's menus
+   Set --tile-color (fill) and --tilt (rotation) inline */
+.toon-tile {
+  /* Uneven corners so each tile looks squishy rather than a perfect square */
+  border-radius: 22% 18% 20% 16% / 18% 22% 16% 20%;
+  /* Indented look: darker sunken rim, lighter dished-in middle */
+  background:
+    radial-gradient(ellipse at 50% 45%, color-mix(in srgb, var(--tile-color), #fff 18%), transparent 70%),
+    var(--tile-color);
+  box-shadow:
+    inset 0 0 0 3px color-mix(in srgb, var(--tile-color), #000 18%), /* rim */
+    inset 0 10px 14px rgba(0,0,0,0.22),        /* top edge casts a shadow into the dip */
+    inset 0 -8px 12px rgba(255,255,255,0.3),   /* light catching the bottom edge */
+    inset 0 0 22px rgba(0,0,0,0.18),
+    0 3px 6px rgba(0,0,0,0.2);
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.35);
+  transform: rotate(var(--tilt));
+  transition: transform 150ms ease-out, filter 150ms ease-out;
+}
+.toon-tile:hover {
+  transform: rotate(0deg) scale(1.06);
+  filter: brightness(1.08);
+}
+.toon-tile:active {
+  transform: rotate(0deg) scale(0.97);
+}
+
+/* Quick fade + drop in, e.g. the supervisor bar appearing */
+.slide-in {
+  animation: slide-in 180ms ease-out;
+}
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(-6px); }
+}
+
 /* Yellow text with a darker yellow drop shadow, like the in-game Back button */
 .back-btn-text {
   text-shadow: 2px 2px 0 #b58a00;
   letter-spacing: 0.03em;
 }
 
-/* SHIELD EFFECT - set --shield-rgb to a "r, g, b" color */
+/* SHIELD EFFECT - set --shield-rgb to a "r, g, b" color for the inner glow
+   and --shield-stripes to the gradient drawn as the ring (see shieldStripes in CogLevelBar) */
 .shield-effect {
   pointer-events: none;
   position: absolute;
-  border: 2px solid rgba(var(--shield-rgb), 0.9);
   background: radial-gradient(ellipse at center, transparent 45%, rgba(var(--shield-rgb), 0.3) 100%);
   box-shadow: inset 0 0 8px rgba(var(--shield-rgb), 0.8);
   animation: shield-pulse 2s ease-in-out infinite;
+}
+/* The ring: the stripes, with the middle cut out so only a 3px border is left */
+.shield-effect::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 3px;
+  border-radius: inherit;
+  background: var(--shield-stripes);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
 }
 
 @keyframes shield-pulse {
@@ -356,4 +432,32 @@ h1, h2, h3, h4, h5, h6 {
 @keyframes gag-glare-sweep {
   0% { left: -75%; }
   60%, 100% { left: 125%; }
+}
+
+/* SOS menu: in-game blue panel, dark inset card area and a yellow scroll thumb on a pale track */
+.sos-frame {
+  background: linear-gradient(180deg, #4d8dbd 0%, #3a74a3 100%);
+  border: 3px solid #1f4c74;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), inset 0 -3px 0 rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.35);
+}
+.sos-inner {
+  background: #2b5f8a;
+  border: 3px solid #173d5e;
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.45);
+}
+.sos-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #f5d82a #7cc4ee; /* Firefox */
+}
+.sos-scroll::-webkit-scrollbar { width: 12px; }
+.sos-scroll::-webkit-scrollbar-track {
+  background: linear-gradient(90deg, #5aaee0, #a8dcf8, #5aaee0);
+  border-radius: 9999px;
+  border: 4px solid #2b5f8a; /* makes the track look like a thin line */
+}
+.sos-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #e0b80c, #fff27a 45%, #e8c20f);
+  border: 1.5px solid #a88505;
+  border-radius: 9999px;
+  min-height: 36px;
 }

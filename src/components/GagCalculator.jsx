@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { GAG_TRACKS, GAGS, MAX_SELECTED, createSelectedGag } from "../data/gags";
+import { GAG_TRACKS, GAGS, MAX_SELECTED, createSelectedGag, createSosGag } from "../data/gags";
 import TrackRow from "./TrackRow";
 import GagButton from "./GagButton";
 import GagPreview from "./GagPreview";
+import SosMenu from "./SosMenu";
 
 /// GAG CALCULATOR COMPONENT
 // When a gag is selected it is added to the 'selected' array in the parent component which can make calculations with it.
@@ -12,9 +13,11 @@ import GagPreview from "./GagPreview";
 //        glare: optional boolean, shows a glare effect on gags (e.g. damage up active)
 //        summary: optional element shown in the right panel when no gag is hovered
 //        onHoverChange({ gag, organic } | null): optional, called when the hovered gag changes
-export default function GagCalculator({ selected, setSelected, panelClass = "bg-th-panel border-th-panel-border", glare = false, summary = null, onHoverChange }) {
+//        onArrowClick(side): optional, called with "left" or "right" when a side arrow is clicked (e.g. open the SOS menu)
+export default function GagCalculator({ selected, setSelected, panelClass = "bg-th-panel border-th-panel-border", glare = false, summary = null, onHoverChange, onArrowClick }) {
   const [hoveredGag, setHoveredGag] = useState(null);
   const [organicHovered, setOrganicHovered] = useState(false);
+  const [showSos, setShowSos] = useState(false); // Side arrows swap the gag list for the SOS menu
 
   // Update hover state and tell the parent (e.g. to preview damage on the cogs)
   function updateHover(gag, organic) {
@@ -23,10 +26,23 @@ export default function GagCalculator({ selected, setSelected, panelClass = "bg-
     onHoverChange?.(gag ? { gag, organic } : null);
   }
 
-  function addGag(gag, org = false) {
-    if (selected.length >= MAX_SELECTED) return;
+  function handleArrow(side) {
+    setShowSos(show => !show);
+    updateHover(null, false);
+    onArrowClick?.(side);
+  }
 
-    const newGag = createSelectedGag(gag, org);
+  function addGag(gag, org = false) {
+    addSelected(createSelectedGag(gag, org));
+  }
+
+  // SOS cards are added just like gags of their track
+  function addSos(card) {
+    addSelected(createSosGag(card));
+  }
+
+  function addSelected(newGag) {
+    if (selected.length >= MAX_SELECTED) return;
 
     setSelected(prev => {
       if (newGag.track !== "trap") return [...prev, newGag];
@@ -40,13 +56,19 @@ export default function GagCalculator({ selected, setSelected, panelClass = "bg-
 
   return (
     <div
-      className={`w-[90%] max-w-6xl min-w-[850px]
+      className={`relative w-[90%] max-w-6xl min-w-[850px]
                   p-4 xl:p-6 rounded-3xl shadow-xl border-4
                   ${panelClass}`}
     >
+      {/* SIDE ARROWS - yellow page arrows like the in-game gag menu, sticking out of both sides */}
+      <SideArrow side="left" onClick={() => handleArrow("left")} />
+      <SideArrow side="right" onClick={() => handleArrow("right")} />
+
       <div className="flex gap-3 xl:gap-4">
-        {/* GAG LIST */}
-        <div className="flex-1">
+        {/* GAG LIST - stays in place (hidden) under the SOS menu so the panel keeps its height */}
+        <div className="flex-1 relative">
+        {showSos && <SosMenu onSelect={addSos} className="absolute inset-0 z-10" />}
+        <div className={showSos ? "invisible" : ""}>
           {GAG_TRACKS.map(track => (
             <TrackRow key={track.name} track={track}>
               {GAGS[track.name].map(gag => (
@@ -64,6 +86,7 @@ export default function GagCalculator({ selected, setSelected, panelClass = "bg-
               ))}
             </TrackRow>
           ))}
+        </div>
         </div>
 
         {/* RIGHT PANEL - absolutely positioned so its content never changes the panel height,
@@ -100,5 +123,42 @@ export default function GagCalculator({ selected, setSelected, panelClass = "bg-
         </div>
       </div>
     </div>
+  );
+}
+
+// Tall rounded yellow triangle pointing away from the panel
+function SideArrow({ side, onClick }) {
+  const isLeft = side === "left";
+  return (
+    <button
+      onClick={onClick}
+      aria-label={isLeft ? "Previous menu" : "Next menu"}
+      className={`
+        absolute top-1/2 -translate-y-1/2
+        ${isLeft ? "right-full -mr-1" : "left-full -ml-1"}
+        w-8 xl:w-10 h-28 xl:h-36
+        transition hover:brightness-110 hover:scale-105 active:scale-95
+        drop-shadow-[0_3px_3px_rgba(0,0,0,0.35)]
+      `}
+    >
+      <svg viewBox="0 0 40 140" className={`w-full h-full ${isLeft ? "-scale-x-100" : ""}`}>
+        <defs>
+          <linearGradient id={`arrow-fill-${side}`} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="#f7d51d" />
+            <stop offset="0.55" stopColor="#fff36b" />
+            <stop offset="1" stopColor="#f2c40f" />
+          </linearGradient>
+        </defs>
+        <path
+          d="M6 8 Q4 2 10 5 L36 63 Q39 70 36 77 L10 135 Q4 138 6 132 Z"
+          fill={`url(#arrow-fill-${side})`}
+          stroke="#c99a06"
+          strokeWidth="2.5"
+          strokeLinejoin="round"
+        />
+        {/* Shine along the top edge */}
+        <path d="M11 14 L30 60" stroke="#fffbd0" strokeWidth="3" strokeLinecap="round" opacity="0.8" />
+      </svg>
+    </button>
   );
 }

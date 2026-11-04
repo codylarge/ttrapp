@@ -11,6 +11,7 @@ export default function SelectedGag({ gag, showPlus, glare = false, onRemove }) 
     <div
       role="button"
       onClick={onRemove}
+      title={gag.sos ? `SOS: ${gag.sos}` : undefined}
       className={showPlus
         ? "shrink-0 grid grid-cols-[14px_auto] xl:grid-cols-[24px_auto] items-center gap-1 xl:gap-2"
         : "shrink-0 grid grid-cols-1 items-center"}
@@ -23,7 +24,7 @@ export default function SelectedGag({ gag, showPlus, glare = false, onRemove }) 
 
       <div
         className={`
-        toon-btn ${gag.org ? "toon-btn-gold" : "toon-btn-blue"}
+        toon-btn ${gag.sos ? "toon-btn-sos" : gag.org ? "toon-btn-gold" : "toon-btn-blue"}
         relative
         px-2 py-1.5 xl:px-3 xl:py-2 rounded-xl
         `}
@@ -33,6 +34,14 @@ export default function SelectedGag({ gag, showPlus, glare = false, onRemove }) 
           alt={gag.name}
           className="w-10 h-8 xl:w-14 xl:h-9 object-contain"
         />
+        {gag.sos && (
+          <span
+            className="absolute top-0.5 left-1 text-[10px] xl:text-xs leading-none font-bold font-impress text-[#13575e] pointer-events-none"
+            style={{ textShadow: "0 1px 0 rgba(255,255,255,0.7)" }}
+          >
+            SOS
+          </span>
+        )}
         {glare && <span className="gag-glare" />}
       </div>
     </div>

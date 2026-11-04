@@ -1,15 +1,19 @@
 /// COG LEVEL BAR
 // A row of cog cells showing each cog's remaining HP after the damage dealt.
-// Props: levels: array of { level, health, displayLevel?, color? }
+// Props: levels: array of { level, health, displayLevel?, color?, shieldEffects? }
+//          (an entry's shieldEffects replaces the bar's, for bars mixing cogs and supervisors)
 //        getHealth(baseHealth): cog health including cog modifiers (e.g. overpaid)
 //        getCellColor(health): background class for a cell (defeated, damaged, preview...)
 //        damage: damage to subtract from each cog's HP (includes the hover preview)
-//        shieldEffects: array of { color: "r, g, b" } shield overlays to draw on every cell
+//        shieldEffects: array of { color: "r, g, b" } active shields, drawn as one striped ring on every cell
 //        className: optional extra classes for the bar (e.g. margins)
 export default function CogLevelBar({ levels, getHealth, getCellColor, damage, shieldEffects, className = "" }) {
+  // In a bar mixing cogs and supervisors, the plain cog levels get thin fixed-width cells so the supervisors get the room
+  const mixed = levels.some(entry => entry.displayLevel);
   return (
     <div
       className={`
+        cog-bar
         w-[90%] max-w-6xl min-w-[850px]
         h-16 xl:h-20
         bg-th-bar
@@ -22,13 +26,14 @@ export default function CogLevelBar({ levels, getHealth, getCellColor, damage, s
       <div className="flex h-full items-center overflow-hidden">
         {levels.map(entry => {
           const health = getHealth(entry.health);
+          const shields = entry.shieldEffects ?? shieldEffects;
           return (
             <div
               key={entry.displayLevel ?? entry.level}
               className={`
                 cog-cell ${entry.displayLevel ? "cog-cell-named" : ""}
                 relative
-                flex-1
+                ${mixed && !entry.displayLevel ? "flex-none w-9 xl:w-11" : "flex-1"}
                 h-full
                 box-border
                 flex flex-col items-center justify-center
@@ -51,14 +56,13 @@ export default function CogLevelBar({ levels, getHealth, getCellColor, damage, s
                 />
               )}
 
-              {/* SHIELD EFFECTS - each active shield is a ring further in so they all stay visible */}
-              {shieldEffects.map((shield, j) => (
+              {/* SHIELD EFFECT - one ring, striped with every active shield's colour */}
+              {shields.length > 0 && (
                 <div
-                  key={shield.color}
-                  className="shield-effect z-10"
-                  style={{ "--shield-rgb": shield.color, inset: `${j * 4}px` }}
+                  className="shield-effect inset-0 z-10"
+                  style={{ "--shield-rgb": shields[0].color, "--shield-stripes": shieldStripes(shields) }}
                 />
-              ))}
+              )}
 
               <div className="cog-cell-level text-sm xl:text-lg font-bold leading-none">
                 {entry.displayLevel ?? entry.level}
@@ -73,4 +77,13 @@ export default function CogLevelBar({ levels, getHealth, getCellColor, damage, s
       </div>
     </div>
   );
+}
+
+// Diagonal stripes cycling through each shield colour, or a solid colour when only one is active
+function shieldStripes(shields) {
+  const STRIPE = 8; // px per stripe
+  const stops = shields.map((shield, i) =>
+    `rgba(${shield.color}, 0.95) ${i * STRIPE}px ${(i + 1) * STRIPE}px`
+  );
+  return `repeating-linear-gradient(45deg, ${stops.join(", ")})`;
 }
