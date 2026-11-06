@@ -6,6 +6,8 @@ import RoundHistory from "../components/RoundHistory";
 import Toggle from "../components/Toggle";
 import CogLevelBar from "../components/CogLevelBar";
 import { MAX_SELECTED, createSelectedGag } from "../data/gags";
+import { COG_LEVELS } from "../data/accuracy";
+import { loadTheme } from "../data/theme";
 
 // Modifier toggles in display order. type says which state object the key belongs to
 // options: optional types the user picks from in the type menu (effect replaces the modifier's effect)
@@ -18,7 +20,13 @@ const MODIFIER_TOGGLES = [
       { id: "bull", value: "+50%", label: "Bull", effect: 1.5, description: "Gags deal 50% more damage." },
     ],
   },
-  { key: "defenseUp", type: "gag", icon: "/images/ui/modifiers/defense-up-boiler.png", name: "Defense Up", description: "Cogs take 10% less damage from gags." },
+  {
+    key: "defenseUp", type: "gag", icon: "/images/ui/modifiers/defense-up-boiler.png", name: "Defense Up",
+    options: [
+      { id: "1", value: "+10%", label: "Level 1", effect: 0.9, description: "Cogs take 10% less damage from gags." },
+      { id: "2", value: "+25%", label: "Level 2", effect: 0.75, description: "Cogs take 25% less damage from gags." },
+    ],
+  },
   {
     key: "overpaid", type: "cog", icon: "/images/ui/modifiers/overpaid.png", name: "Overpaid",
     options: [
@@ -56,18 +64,9 @@ const DEPARTMENTS = [
   },
 ];
 
-// The theme the user last picked, or classic
-function loadTheme() {
-  try {
-    return localStorage.getItem("damageCalcTheme") === "tracker" ? "tracker" : "classic";
-  } catch {
-    return "classic";
-  }
-}
-
 export default function DamageCalculator() {
   const [selected, setSelected] = useState([]);
-  const [rounds, setRounds] = useState([]); // Saved rounds: { gags, modifiers, total }
+  const [rounds, setRounds] = useState([]); // Saved rounds: { gags, modifiers, total, disabled }
   const [editingIndex, setEditingIndex] = useState(null); // Index of the round open in the calculator, or null for a new round
   const [hoverPreview, setHoverPreview] = useState(null); // { gag, organic } of the hovered gag, or null
   const [levelsMode, setLevelsMode] = useState("normal");
@@ -88,7 +87,7 @@ export default function DamageCalculator() {
   const [gagModifiers, setGagModifiers] = useState({
     damageUp: { active: false, effect: 1.5, option: "bull" }, // Gags deal +50% damage
     defenseDown: { active: false, effect: 1.2, option: "1" }, // Gags deal +20/40/60% damage
-    defenseUp: { active: false, effect: 0.9 }                 // Cogs take 10% less damage, gags deal 90%
+    defenseUp: { active: false, effect: 0.75, option: "2" }   // Cogs take 10/25% less damage
   });
 
   // Shield overlays shown on the cog levels bar, color is "r, g, b"
@@ -104,12 +103,14 @@ export default function DamageCalculator() {
 
   // Cog health bar counts damage from every saved round plus the current one
   // The round being edited is skipped, the calculator holds its new version
-  const previousRoundsDamage = rounds.reduce((sum, round, i) => i === editingIndex ? sum : sum + round.total, 0);
-  const overallDamage = previousRoundsDamage + currentTotalDamage;
+  // Disabled rounds deal no damage, including when one is open in the calculator
+  const openRoundDisabled = rounds[editingIndex]?.disabled ?? false;
+  const previousRoundsDamage = rounds.reduce((sum, round, i) => i === editingIndex || round.disabled ? sum : sum + round.total, 0);
+  const overallDamage = previousRoundsDamage + (openRoundDisabled ? 0 : currentTotalDamage);
 
   // Damage preview while hovering a gag: what the cogs would take if it were added
   // null when nothing is hovered or no more gags can be added
-  const previewOverallDamage = hoverPreview && selected.length < MAX_SELECTED
+  const previewOverallDamage = hoverPreview && selected.length < MAX_SELECTED && !openRoundDisabled
     ? previousRoundsDamage + calculateDamage([...selected, createSelectedGag(hoverPreview.gag, hoverPreview.organic)]).total
     : null;
 
@@ -121,29 +122,6 @@ export default function DamageCalculator() {
     return "bg-th-cell";
   }
   
-  const levelsNormal = [
-    { level: 1, health: 6 },
-    { level: 2, health: 12 },
-    { level: 3, health: 20 },
-    { level: 4, health: 30 },
-    { level: 5, health: 42 },
-    { level: 6, health: 56 },
-    { level: 7, health: 72 },
-    { level: 8, health: 90 },
-    { level: 9, health: 110 },
-    { level: 10, health: 132 },
-    { level: 11, health: 156 },
-    { level: 12, health: 196 },
-    { level: 13, health: 224 },
-    { level: 14, health: 254 },
-    { level: 15, health: 286 },
-    { level: 16, health: 320 },
-    { level: 17, health: 356 },
-    { level: 18, health: 394 },
-    { level: 19, health: 434 },
-    { level: 20, health: 476 },
-  ];
-
   const levelsSupers = [
     { level: 1, displayLevel: "Scrap", health: 250, color: "#9e5c75", dept: "sellbot" },
     { level: 2, displayLevel: "Steel", health: 750, color: "#9e5c75", dept: "sellbot" },
@@ -228,7 +206,7 @@ export default function DamageCalculator() {
   // Supervisor bar: cog levels 9-16 then the shown supervisors
   // Cog modifiers (overpaid) only affect the regular cogs, so their health and shields are baked in here
   const levelsSupersBar = [
-    ...levelsNormal
+    ...COG_LEVELS
       .filter(entry => entry.level >= 9 && entry.level <= 16)
       .map(entry => ({ ...entry, health: getCogHealth(entry.health) })),
     ...visibleSupers.map(entry => ({ ...entry, shieldEffects: shieldEffects.filter(shield => !shield.cogOnly) })),
@@ -380,9 +358,9 @@ export default function DamageCalculator() {
       .filter(modifier => modifier.active);
   }
 
-  // The calculator's current gags and modifiers as a round
+  // The calculator's current gags and modifiers as a round. An open round stays disabled if it was
   function makeCurrentRound() {
-    return { gags: selected, modifiers: getActiveModifiers(), total: currentTotalDamage };
+    return { gags: selected, modifiers: getActiveModifiers(), total: currentTotalDamage, disabled: openRoundDisabled };
   }
 
   // Put a saved round's gags and modifiers back into the calculator
@@ -463,6 +441,11 @@ export default function DamageCalculator() {
     } else if (isEditing && index < editingIndex) {
       setEditingIndex(editingIndex - 1); // Open round shifted down
     }
+  }
+
+  // Turn a saved round's damage off or on without deleting it
+  function handleToggleRound(index) {
+    setRounds(prev => prev.map((round, i) => i === index ? { ...round, disabled: !round.disabled } : round));
   }
 
   // Delete every saved round but keep the gags in the calculator
@@ -568,7 +551,7 @@ export default function DamageCalculator() {
       )}
       {/* Normal 1-20 bar, default mode only */}
       {levelsMode === "normal" && (
-        <CogLevelBar levels={levelsNormal} className="mb-4" {...cogBarProps} />
+        <CogLevelBar levels={COG_LEVELS} className="mb-4" {...cogBarProps} />
       )}
 
       {/* COG LEVEL MODES */ }
@@ -676,6 +659,7 @@ export default function DamageCalculator() {
                 overallDamage={overallDamage}
                 onSelectRound={handleSelectRound}
                 onRemoveRound={handleRemoveRound}
+                onToggleRound={handleToggleRound}
                 onResetRounds={handleResetRounds}
               />
             : selected.length > 0 && <DamageSummary breakdown={damageBreakdown} />

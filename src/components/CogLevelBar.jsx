@@ -7,7 +7,8 @@
 //        damage: damage to subtract from each cog's HP (includes the hover preview)
 //        shieldEffects: array of { color: "r, g, b" } active shields, drawn as one striped ring on every cell
 //        className: optional extra classes for the bar (e.g. margins)
-export default function CogLevelBar({ levels, getHealth, getCellColor, damage, shieldEffects, className = "" }) {
+//        formatValue(value): optional, how a cell's number is shown (e.g. as a percent, null when there's no value)
+export default function CogLevelBar({ levels, getHealth, getCellColor, damage = 0, shieldEffects = [], formatValue = value => value, className = "" }) {
   // In a bar mixing cogs and supervisors, the plain cog levels get thin fixed-width cells so the supervisors get the room
   const mixed = levels.some(entry => entry.displayLevel);
   return (
@@ -27,13 +28,14 @@ export default function CogLevelBar({ levels, getHealth, getCellColor, damage, s
         {levels.map(entry => {
           const health = getHealth(entry.health);
           const shields = entry.shieldEffects ?? shieldEffects;
+          const value = formatValue(health === null ? null : Math.max(health - damage, 0));
           return (
             <div
               key={entry.displayLevel ?? entry.level}
               className={`
                 cog-cell ${entry.displayLevel ? "cog-cell-named" : ""}
                 relative
-                ${mixed && !entry.displayLevel ? "flex-none w-9 xl:w-11" : "flex-1"}
+                ${mixed && !entry.displayLevel ? "flex-none w-9 xl:w-11" : entry.displayLevel ? "flex-1" : "flex-1 min-w-0"}
                 h-full
                 box-border
                 flex flex-col items-center justify-center
@@ -68,8 +70,8 @@ export default function CogLevelBar({ levels, getHealth, getCellColor, damage, s
                 {entry.displayLevel ?? entry.level}
               </div>
               {/* Remaining HP, includes the hover preview */}
-              <div className="text-xs xl:text-base leading-none mt-1 opacity-90">
-                {Math.max(health - damage, 0)}
+              <div className="text-xs xl:text-base h-3 xl:h-4 flex items-center leading-none mt-1 opacity-90">
+                {value}
               </div>
             </div>
           );

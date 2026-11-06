@@ -1,0 +1,68 @@
+atkAcc = propAcc + trackExp + tgtDef + bonus
+
+propAcc: base accuaracy of a gag being used
+
+trackExp is a value determined by the highest gag a toon has unlocked in a track. For the sake of this project and its use case, assume trackExp of 60
+---------------------------------------
+PROP ACCURACY CHART:
+Toonup: 70% 
+High dive: 95%
+
+Lure:
+$1 bill: 60%
+Small maget: 55%
+$5 bill: 70%
+Big Magnet: 65%
+$10 bill: 80%
+Hypno: 75%
+Presentation: 90%
+
+Sound:
+All Sound: 95%
+
+Throw: 
+All Throw: 75%
+
+Squirt:
+All Squirt: 95%
+
+Drop:
+All drop: 50%
+---------------------------------------
+
+tgtDef: negative integer determined by cog level (Note: IF a toon up gag is used, tgtDef is set to 0 for that gag)
+Level 1	-2
+Level 2	-5
+Level 3	-10
+Level 4	-15
+Level 5	-20
+Level 6	-25
+Level 7	-30
+Level 8	-35
+Level 9	-40
+Level 10 -45
+Level 11 -50
+Level 12 -55
+level 13: -60
+level 14-20: -65
+
+bonus: the stun bonus provided from previous gags in the track. 
+A trap will provide a 10% stun for an incoming lure, and each additional trap will be an extra 5%
+A trap activation via lure will provide a 50% bonus for incoming gags. 
+Normal gags provide 25% for each stun. 
+
+
+niche mechanics:
+Trap placements, successful lures, Doodle tricks, and toon ups no longer grant stun bonuses
+
+Multi-Lure Mechanics: 
+Multiple Lure gags of the same type used simultaneously now grant a bonus
+(20/15/10)% Accuracy depending on the gag level discrepancies of the additional
+Lure gags, with the bonus being smaller if lower leveled Lure gags are used
+○ Group Lures paired with another Group Lure yield ‘Lure Bonus’
+○ Dollar Bills paired with another Dollar Bill yield ‘Lure Bonus’
+○ Group Lures and Dollar Bills used simultaneously do not grant ‘Lure Bonus’
+
+Basically, take the highest lure as the main accuracy, and the lower/equal lure will give the bonus
+10% for $1 and small magnet, 15% for $5 and big magnet, 20% for 10$ and hypnos.
+Dont give lure bonus for magnets/hypnos used with bills. 

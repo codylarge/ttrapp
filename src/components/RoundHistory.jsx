@@ -4,14 +4,15 @@ const MAX_ROUND_GAGS = 4; // A real round has at most 4 toons, so more gags than
 
 /// ROUND HISTORY
 // Lists saved rounds (gags, modifiers, damage), then the current round and overall damage.
-// Props: rounds: array of { gags, modifiers, total }
+// Props: rounds: array of { gags, modifiers, total, disabled }
 //        editingIndex: index of the round open in the calculator, or null
 //        currentDamage: damage of the gags in the calculator right now
 //        overallDamage: damage of every round combined
 //        onSelectRound(index): called when a round is clicked
 //        onRemoveRound(index): called when a round's × badge is clicked
+//        onToggleRound(index): called when a round's disable badge is clicked
 //        onResetRounds(): deletes every saved round
-export default function RoundHistory({ rounds, editingIndex, currentDamage, overallDamage, onSelectRound, onRemoveRound, onResetRounds }) {
+export default function RoundHistory({ rounds, editingIndex, currentDamage, overallDamage, onSelectRound, onRemoveRound, onToggleRound, onResetRounds }) {
   return (
     <div className="w-full max-h-full flex flex-col text-left font-impress text-th-surface-text">
       <h2 className="font-bold text-lg xl:text-xl mb-1 xl:mb-2 text-center">Rounds</h2>
@@ -47,6 +48,33 @@ export default function RoundHistory({ rounds, editingIndex, currentDamage, over
               }
             `}
           >
+            {/* DISABLE BADGE - next to the remove badge, stays visible while the round is disabled */}
+            <span
+              role="button"
+              aria-pressed={!!round.disabled}
+              title={round.disabled ? "Enable this round" : "Disable this round"}
+              onClick={(e) => {
+                e.stopPropagation(); // prevent opening the round
+                onToggleRound(i);
+              }}
+              className={`
+                absolute -top-1 right-[18px] z-10
+                w-5 h-5 rounded-full
+                flex items-center justify-center
+                text-white
+                border-2 border-white
+                shadow-[0_1px_3px_rgba(0,0,0,0.5)]
+                hover:scale-110
+                transition
+                ${round.disabled ? "bg-amber-500" : "bg-neutral-500 opacity-0 group-hover:opacity-100"}
+              `}
+            >
+              <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <circle cx="8" cy="8" r="6" />
+                <path d="M3.8 3.8l8.4 8.4" />
+              </svg>
+            </span>
+
             {/* REMOVE BADGE - appears in the corner on hover, like the organic badge on gags */}
             <span
               role="button"
@@ -71,7 +99,7 @@ export default function RoundHistory({ rounds, editingIndex, currentDamage, over
             </span>
 
             {/* TOP ROW - round number, tiny modifier icons, damage */}
-            <div className="flex items-center gap-1 h-4 mb-1 text-xs leading-none">
+            <div className={`flex items-center gap-1 h-4 mb-1 text-xs leading-none ${round.disabled ? "opacity-50 grayscale" : ""}`}>
               <span className={`font-bold ${isInvalid ? "text-red-600" : "text-th-surface-muted"}`}>
                 {isInvalid && "⚠ "}#{i + 1}
               </span>
@@ -80,11 +108,11 @@ export default function RoundHistory({ rounds, editingIndex, currentDamage, over
                   <img key={modifier.key} src={modifier.icon} alt={modifier.key} title={modifier.optionLabel ? `${modifier.name}: ${modifier.optionLabel}` : modifier.name} className="w-3.5 h-3.5" />
                 ))}
               </div>
-              <span className={`font-bold text-sm ${isInvalid ? "text-red-600" : ""}`}>{round.total}</span>
+              <span className={`font-bold text-sm ${isInvalid ? "text-red-600" : ""} ${round.disabled ? "line-through mr-9" : ""}`}>{round.total}</span>
             </div>
 
             {/* GAGS - 4 equal slots that fill the box width. An invalid round squeezes in an extra slot */}
-            <div className={`grid gap-0.5 ${isInvalid ? "grid-cols-5" : "grid-cols-4"}`}>
+            <div className={`grid gap-0.5 ${isInvalid ? "grid-cols-5" : "grid-cols-4"} ${round.disabled ? "opacity-50 grayscale" : ""}`}>
               {round.gags.map((gag, j) => (
                 <div
                   key={j}

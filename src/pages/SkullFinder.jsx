@@ -220,6 +220,10 @@ export default function SkullFinder() {
               transformOrigin: "50% 100%",
             }}
           >
+            {/* START HINTS - either side of the bottom row, tilted with the floor */}
+            <StartHint side="left" cols={cols} />
+            <StartHint side="right" cols={cols} />
+
             {/* OBJECTIVE BUTTON - its own row above the middle column */}
             {Array.from({ length: cols }, (_, c) => (
               c === buttonCol ? (
@@ -273,6 +277,28 @@ export default function SkullFinder() {
             )}
           </div>
       </div>
+    </div>
+  );
+}
+
+// Yellow text with an arrow pointing at the bottom row, shrinks to fit the space beside the board
+function StartHint({ side, cols }) {
+  const isLeft = side === "left";
+  return (
+    <div
+      className="absolute flex flex-col items-center justify-center text-yellow-300 font-minnie whitespace-nowrap pointer-events-none"
+      style={{
+        [isLeft ? "right" : "left"]: "calc(100% + 1vw)",
+        bottom: "1.5vh",
+        height: "var(--tile)",
+        fontSize: `min(var(--tile) * 0.2, (100vw - var(--tile) * ${cols} - ${(cols - 1) * 1.2}vw - 3vh) / 14)`,
+        filter: "drop-shadow(0 2px 0 rgba(0,0,0,0.9))",
+      }}
+    >
+      Start here
+      <svg viewBox="0 0 60 20" className="w-[3.75em]" fill="currentColor">
+        <path d={isLeft ? "M0 7 H42 V1 L60 10 L42 19 V13 H0 Z" : "M60 7 H18 V1 L0 10 L18 19 V13 H60 Z"} />
+      </svg>
     </div>
   );
 }

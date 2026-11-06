@@ -1,0 +1,183 @@
+HOW THE ACCURACY CALCULATOR WORKS
+=================================
+
+This describes how the site works out its numbers. The base game rules it starts
+from are in the "accuracy formula" file.
+
+Code: src/data/accuracy.js (all the math), src/pages/AccuracyCalculator.jsx (the page),
+src/components/AccuracySummary.jsx (the right panel).
+
+
+WHAT THE PAGE SHOWS
+---------------------------------------
+Levels bar: the chance the selected gags kill each cog level, with two exceptions:
+  Only lure, or only lure and trap: the lure's accuracy, labelled "Lure hit chance"
+  Any other single track: that track's accuracy, labelled "Gag Accuracy"
+Trap alone has no accuracy of its own, so it stays on "Chance cog dies".
+
+Right panel: each track's chance to hit at 3 cog levels (11, 12, 13 by default), plus
+Cog dies. The arrows move the levels 1 at a time, from 1-3 up to 18-20.
+
+Clicking a track's row in the right panel marks it as already hit. See ALREADY HIT below.
+
+Up to 5 gags can be selected, same as the damage calculator.
+
+
+STEP 1: ONE TRACK'S ACCURACY
+---------------------------------------
+atkAcc = propAcc + trackExp + tgtDef + bonus, capped at 95%
+
+propAcc: the gag's base accuracy
+trackExp: always 60
+tgtDef: from the cog's level (level 12 is -55, level 13 is -60, level 14 and up is -65)
+bonus: see below
+
+Each track rolls once, so all the gags in a track hit or miss together.
+
+Bonus:
+  +25 for each gag that hit in an earlier track (a stun)
+  +50 for every track after a lure springs a trap
+  +10 to the lure if a trap is placed, +5 for each extra trap
+  Trap placements and successful lures give no stun
+
+Tracks always go in this order: trap, lure, sound, throw, squirt, drop.
+
+
+SPECIAL CASES
+---------------------------------------
+Trap: never rolls by itself. It only goes off if the lure hits, so it shows the lure's
+chance. With no lure it shows "-" and deals no damage. If there are several traps, only
+the first one deals damage.
+
+Multiple lures: the highest lure sets the accuracy and each lower or equal lure adds a bonus.
+  +10 for $1 bill or small magnet
+  +15 for $5 bill or big magnet
+  +20 for $10 bill, hypno goggles or presentation
+  Bills mixed with magnets, hypnos or presentation give no bonus
+  With 3 or more lures, every extra lure adds its bonus
+
+Lured cog: the next track always hits (100%) and knocks the cog out of the lure.
+The exception is drop, which can't hit a lured cog (0%) and leaves it lured.
+This only happens if the lure hit, so the track's chance mixes both outcomes (see Step 2).
+
+SOS: an SOS always hits, so its whole track shows 100%, even with normal gags in that track.
+  The SOS itself gives no stun, but normal gags in its track still do
+  An SOS drop hits a lured cog (the damage calculator still says it misses)
+  An SOS trap shows 100% but gives no lure stun or +50 bonus, and only deals damage if a lure hits
+
+
+STEP 2: WALKING EVERY OUTCOME
+---------------------------------------
+A track's accuracy depends on what hit before it, so one fixed number per track isn't
+enough. Instead the calculator goes through every combination of hits and misses, which
+is at most 32 per level (5 tracks, 2 outcomes each). It's exact, not an estimate.
+
+For each combination:
+  1. Chance of it happening: multiply each track's hit or miss chance together
+  2. Damage dealt: add up only the tracks that hit
+
+Then:
+  Track accuracy = the chances of every combination where that track hit, added up
+  Cog dies = the chances of every combination where damage reaches the cog's health, added up
+
+Results are rounded to the nearest whole percent. Above 99% they keep 1 decimal
+(e.g. 99.8%), and 100% only shows when it's certain.
+
+
+DAMAGE RULES (same as the damage calculator)
+---------------------------------------
+Track damage: all the gags in the track added up
+Combo: +20% of that if the track has more than 1 gag (rounded up)
+Knockback: +50% of it for the throw or squirt track that hits a lured cog (rounded up)
+Trap: the trap's damage when the lure hits. No knockback when a trap is used
+
+The accuracy page has no modifiers, so Damage Up, Overpaid and the rest aren't included.
+
+
+EXAMPLE 1: LURE THEN THROW (LEVEL 12)
+---------------------------------------
+$1 bill + birthday cake
+
+Lure: 60 + 60 - 55 = 65%
+Throw on its own: 75 + 60 - 55 = 80%
+
+Throw always hits if the lure hit, and rolls its 80% if the lure missed:
+  Throw = (0.65 x 1) + (0.35 x 0.80) = 0.93 = 93%
+
+Cog dies: the cake deals 150 with knockback, which is short of level 12's 196 HP, so it's 0%.
+
+
+EXAMPLE 2: COG DIES (LEVEL 14, 254 HP)
+---------------------------------------
+2 birthday cakes + fire hose + grand piano
+
+Damage:
+  Cakes: 100 + 100 + 20% combo = 240
+  Hose: 30
+  Piano: 170
+
+Accuracy:
+  Cakes: 75 + 60 - 65 = 70%
+  Hose: 95 + 60 - 65 = 90%, or 95% after the cakes hit (+50, capped)
+  Piano: 50 + 60 - 65 = 45%, plus 25 for each gag that already hit:
+    Cakes and hose hit: 95% (capped)
+    Cakes hit: 95%
+    Hose hit: 70%
+    Nothing hit: 45%
+
+Cakes  Hose  Piano  Chance                        Damage  Dies?
+Hit    Hit   Hit    0.70 x 0.95 x 0.95 = 63.175%  440     Yes
+Hit    Hit   Miss   0.70 x 0.95 x 0.05 =  3.325%  270     Yes
+Hit    Miss  Hit    0.70 x 0.05 x 0.95 =  3.325%  410     Yes
+Hit    Miss  Miss   0.70 x 0.05 x 0.05 =  0.175%  240     No
+Miss   Hit   Hit    0.30 x 0.90 x 0.70 = 18.900%  200     No
+Miss   Hit   Miss   0.30 x 0.90 x 0.30 =  8.100%   30     No
+Miss   Miss  Hit    0.30 x 0.10 x 0.45 =  1.350%  170     No
+Miss   Miss  Miss   0.30 x 0.10 x 0.55 =  1.650%    0     No
+
+Cog dies = 63.175 + 3.325 + 3.325 = 69.825%, shown as 70%
+
+The 8 chances always add up to 100%, which is a handy check.
+
+The 2 cakes alone would be 0% here, because 240 is short of 254. The hose and piano are
+what make the kill possible.
+
+The same gags at other levels:
+  Level 12: 95%
+  Level 13: 75%
+  Level 14: 70%
+  Levels 15-18: 66%
+  Level 19: 63%
+  Level 20: 0%
+
+
+EXAMPLE 3: TNT
+---------------------------------------
+TNT + $1 bill. TNT deals 180, so it kills level 11 (156 HP) but not level 12 (196 HP).
+
+Level 11: lure is 60 + 60 - 50 + 10 (trap) = 80%, so Cog dies = 80%
+Level 12: 180 is less than 196, so Cog dies = 0%
+
+TNT with no lure never goes off, so Cog dies is 0% at every level.
+
+
+ALREADY HIT
+---------------------------------------
+Clicking a track's row marks it as already hit: the row turns green with a check in its
+dot, and its accuracy becomes 100% at every level. Clicking again undoes it.
+It counts as a normal hit: it deals its damage and gives later tracks their stun. A lure
+marked as hit also lures the cog or springs the trap, and a drop marked as hit lands even
+on a lured cog.
+
+Trap rows can't be clicked because trap follows the lure, and SOS rows can't because
+they're already 100%. Removing every gag from a track clears its mark.
+
+Example 2 at level 14 with the cakes marked as hit: the bottom 4 rows of the table can no
+longer happen, so Cog dies = 0.95 + (0.05 x 0.95) = 99.75%, shown as 99.8%.
+
+
+LEVELS BAR COLOURS
+---------------------------------------
+Green at 90% or higher, light green for any lower chance, red at 0%
+When the bar is showing accuracy: green at 95% or higher, light green from 80%, red below 80%
+Grey when no gags are selected

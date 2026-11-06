@@ -46,7 +46,7 @@ h1, h2, h3, h4, h5, h6 {
   --th-cell: #6b7280;
   --th-cell-hit: #ef4444;
   --th-cell-dead: #22c55e;
-  --th-cell-preview: #86efac;
+  --th-cell-preview: #5fe08a;
   --th-cell-border: #111827;
   --th-cell-text: #111827;
 
@@ -83,7 +83,7 @@ h1, h2, h3, h4, h5, h6 {
   --th-cell: #ee3b2c;            /* red dot: laff left */
   --th-cell-hit: #ee3b2c;
   --th-cell-dead: #34c24a;       /* green dot: dies */
-  --th-cell-preview: #9be6a4;
+  --th-cell-preview: #78dc86;
   --th-cell-border: #1e4d6b;
   --th-cell-text: #1e4d6b;       /* HP under each dot */
 

@@ -22,7 +22,8 @@ export default function SosMenu({ onSelect, className = "" }) {
       {/* TITLE */}
       <h2
         className="font-minnie text-white text-2xl xl:text-3xl leading-none pl-3 pt-1 pb-2 xl:pb-3"
-        style={{ textShadow: "-2px -2px 0 #0d2a45, 2px -2px 0 #0d2a45, -2px 2px 0 #0d2a45, 2px 2px 0 #0d2a45, 0 3px 0 #0d2a45" }}
+        // Thin outline, then a thick drop shadow stepped out to the right and a little down
+        style={{ textShadow: "-1px -1px 0 #0d2a45, 1px -1px 0 #0d2a45, -1px 1px 0 #0d2a45, 1px 1px 0 #0d2a45, 2px 1px 0 #0d2a45, 3px 1px 0 #0d2a45, 4px 2px 0 #0d2a45, 5px 2px 0 #0d2a45, 6px 3px 0 #0d2a45" }}
       >
         SOS Cards
       </h2>
